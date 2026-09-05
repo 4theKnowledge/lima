@@ -22,6 +22,7 @@ class HexCell(BaseModel):
     factor_soil: float | None
     factor_access: float | None
     factor_bushfire: float | None
+    factor_scale: float | None
 
     # raw layers surfaced in the map
     parcel_count: int | None
