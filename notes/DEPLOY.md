@@ -10,11 +10,11 @@ Two services in one Railway project (`lima`):
 | Service | Source | What it runs |
 |---|---|---|
 | `web` | GitHub repo `lima`, auto-deploys on push to `main` | Vite build → Caddy static serve |
-| `api` | `railway up` from laptop (no GitHub source) | FastAPI + baked-in DuckDB snapshot |
+| `api` | `railway up --no-gitignore` from laptop (no GitHub source) | FastAPI + baked-in DuckDB snapshot |
 
 **Why the split.** The API image needs `db/land_read.duckdb` (~139 MB, gitignored).
 GitHub-connected deploys build from the git tree — the snapshot can't ride
-along without committing a huge binary. `railway up` uploads the local
+along without committing a huge binary. `railway up --no-gitignore` uploads the local
 working tree (including untracked files), which is the least-friction way
 to ship the snapshot without polluting git.
 
@@ -51,7 +51,7 @@ railway config apply
 
 # 4. Connect the web service to GitHub (dashboard, not CLI):
 #      web service → Settings → Source → Connect Repo → lima → branch main
-#    Leave the api service as "empty source" so `railway up` works for it.
+#    Leave the api service as "empty source" so `railway up --no-gitignore` works for it.
 
 # 5. Generate public domains
 railway link            # pick api
@@ -71,7 +71,7 @@ railway variables --set VITE_API_BASE_URL='https://api-xxx.up.railway.app'
 
 # 7. Deploy the api once (uploads the 139 MB snapshot)
 railway link            # api
-railway up
+railway up --no-gitignore
 
 # 8. Web deploys automatically on the next git push. To force one now:
 git commit --allow-empty -m "trigger deploy"
@@ -108,7 +108,7 @@ uv run python -m scoring.score
 
 # 2. Redeploy only the api (web is unaffected)
 railway link            # api
-railway up
+railway up --no-gitignore
 ```
 
 The web service does NOT need redeploying unless frontend code changes —
@@ -150,10 +150,14 @@ APP_PASSCODE=test uv run uvicorn api.main:app --reload --port 8010
 - Old snapshots pile up in `.git/objects` — every clone pulls them all.
 - Data-refresh cadence means dozens of 139 MB blobs over a year.
 
-`railway up` sidesteps all of this. The snapshot never touches git.
+`railway up --no-gitignore` sidesteps all of this. The snapshot never touches git.
 
 ## Common gotchas
 
+- **API build fails with `db/land_read.duckdb: not found`.** You forgot
+  `--no-gitignore` on `railway up`. `.gitignore` excludes the snapshot from
+  the upload; `.railwayignore` does NOT override `.gitignore` (both are
+  additive), so the flag is the only way to include gitignored files.
 - **`railway config plan` shows drift after dashboard changes.** Expected —
   the dashboard and IaC file can disagree. Pull to sync (`railway config pull`)
   or apply to overwrite Railway with the file.
