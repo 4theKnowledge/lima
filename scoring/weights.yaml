@@ -4,8 +4,8 @@
 # Stage 1 — hard mask. A cell is excluded outright if ANY of these hold.
 # The reason is stored in hex.exclusion_reasons; excluded cells stay in the table.
 exclusions:
-  gsr_mean_mm_below: 350
-  capability_class_at_or_above: 5
+  gsr_mean_mm_below: 500
+  capability_class_at_or_above: 6
   slope_mean_pct_above: 20
   parcel_count_below: 1
   # Coarse proxy for water register allocation status — see §6.
@@ -19,11 +19,11 @@ exclusions:
   # Default 5 excludes cells with saline groundwater and worse — usable water
   # supply becomes the binding constraint for most rural enterprises.
   # Set to 8 to disable.
-  salinity_idx_at_or_above: 5
+  salinity_idx_at_or_above: 3
   # DBCA estate fraction. Cells more than X fraction inside national parks /
   # state forests / nature reserves have effectively no buyable land.
   # Default 0.9 excludes cells that are ≥90% DBCA. Set to 1.1 to disable.
-  dbca_estate_frac_above: 0.9
+  dbca_estate_frac_above: 0.95
   # Summer max temp (°C, Dec-Feb mean daily max, 1991-2020 baseline).
   # Excludes cells with mean summer max at or above X — heat stress on stock,
   # crops and humans. Default 40 sits above every SW/wheatbelt cell (i.e.
@@ -44,12 +44,17 @@ exclusions:
   pop_density_per_km2_above: 10000
 
 # Stage 2 — weighted sum on survivors. Weights must sum to 1.0.
+# Renormalised from the original 5-factor defaults when `scale` was added
+# — kept broad shape (water/rainfall lead, soil next, access/bushfire lower).
+# Scale carves out a middle slot because it's meaningfully purpose-defining
+# but not primary evidence like water or rainfall.
 weights:
-  water:    0.30
-  rainfall: 0.25
-  soil:     0.20
-  access:   0.15
-  bushfire: 0.10
+  water: 0.18
+  rainfall: 0.2
+  soil: 0.08
+  access: 0.18
+  bushfire: 0.2
+  scale: 0.16
 
 # Breakpoint curves. Each is a list of [input, score] pairs; scores between
 # breakpoints are linearly interpolated. Use these to encode real-world
@@ -66,19 +71,19 @@ curves:
 
   # Distance to sealed road (km). 2km and 8km are similar; 8km and 40km are not.
   access_road:
-    - [0,   1.00]
-    - [2,   0.95]
-    - [8,   0.80]
-    - [20,  0.40]
-    - [40,  0.10]
-    - [80,  0.00]
+    - [0, 1.00]
+    - [2, 0.95]
+    - [8, 0.80]
+    - [20, 0.40]
+    - [40, 0.10]
+    - [80, 0.00]
 
   # Distance to nearest townsite (km). Very close is fine; very far is not.
   access_townsite:
-    - [0,   1.00]
-    - [15,  0.90]
-    - [40,  0.60]
-    - [80,  0.25]
+    - [0, 1.00]
+    - [15, 0.90]
+    - [40, 0.60]
+    - [80, 0.25]
     - [150, 0.00]
 
   # Soil capability class 1 (best) .. 6 (worst). DPIRD uses A1..C2 ratings
@@ -98,6 +103,37 @@ curves:
     - [0.7, 0.40]
     - [1.0, 0.15]
 
+  # Parcel scale — how well the cell's MEDIAN parcel size matches the intent.
+  # Two named curves; Purposes pick which one is active via `scale_curve`.
+  #
+  # Broadacre wants big blocks. Cells full of 500 ha+ parcels score max;
+  # townsite subdivisions score minimum.
+  scale_broadacre:
+    - [0.5, 0.10]     # townsite subdivision
+    - [10, 0.30]      # small farm / hobby
+    - [50, 0.70]
+    - [200, 0.95]
+    - [500, 1.00]
+    - [5000, 1.00]
+
+  # Hobby / off-grid wants 1-10 ha blocks. Penalises townsite subdivision
+  # (too small) AND big broadacre blocks (would need subdividing — wrong
+  # shire for that). Peak at ~5 ha, gentle roll-off either side.
+  scale_hobby:
+    - [0.2, 0.00]     # townsite subdivision, not a lifestyle block
+    - [1, 0.60]
+    - [2, 0.90]
+    - [5, 1.00]       # ideal
+    - [10, 0.90]
+    - [20, 0.75]
+    - [50, 0.45]
+    - [100, 0.25]     # too big for a hobby block
+    - [500, 0.10]
+
+# Default scale curve. Purpose bundles override this by name; edit here to
+# change the standalone default (i.e. when no Purpose is active).
+scale_curve: scale_hobby
+
 # Rainfall trend (mm/decade since 1970). Negative values = declining.
 # Penalty is applied as a MULTIPLIER on the rainfall_level score.
 # See §6: "treat steeper decline as a penalty on the level score, not a
@@ -107,14 +143,14 @@ rainfall_trend_penalty:
   - [-40, 0.60]
   - [-20, 0.80]
   - [-10, 0.95]
-  - [  0, 1.00]
-  - [ 20, 1.05]   # capped in scoring code so total score cannot exceed 1.0
+  - [0, 1.00]
+  - [20, 1.05]    # capped in scoring code so total score cannot exceed 1.0
 
 # Water sub-score. In the MVP the only signal is gw_proclaimed (per §6, the
 # Water Register has no bulk API; allocation status is a Tier 2 manual loader).
 water_score:
-  unproclaimed:              1.00
-  proclaimed_no_headroom:    0.00   # unreachable in MVP; requires manual loader
+  unproclaimed: 1.00
+  proclaimed_no_headroom: 0.00      # unreachable in MVP; requires manual loader
   proclaimed_unknown_headroom: 0.50   # what we can actually assign in MVP
 
 # Residual layer (M8): join price_locality to hex; grey out sparse localities.

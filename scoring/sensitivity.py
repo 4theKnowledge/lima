@@ -39,7 +39,7 @@ NOTES_DIR = PROJECT_ROOT / "notes"
 LOG_MD = NOTES_DIR / "SENSITIVITY_LOG.md"
 LOG_JSON_DIR = NOTES_DIR / "sensitivity"
 
-FACTORS = ("water", "rainfall", "soil", "access", "bushfire")
+FACTORS = ("water", "rainfall", "soil", "access", "bushfire", "scale")
 
 
 def _load_weights() -> dict[str, float]:
@@ -65,7 +65,7 @@ def _load_factor_matrix() -> pd.DataFrame:
         """
         SELECT h3, lga,
                factor_water, factor_rainfall, factor_soil,
-               factor_access, factor_bushfire
+               factor_access, factor_bushfire, factor_scale
         FROM hex
         WHERE excluded = FALSE
           AND factor_water     IS NOT NULL
@@ -73,6 +73,7 @@ def _load_factor_matrix() -> pd.DataFrame:
           AND factor_soil      IS NOT NULL
           AND factor_access    IS NOT NULL
           AND factor_bushfire  IS NOT NULL
+          AND factor_scale     IS NOT NULL
         """
     ).fetchdf()
     con.close()
@@ -86,6 +87,7 @@ def _score(df: pd.DataFrame, weights: dict[str, float]) -> np.ndarray:
         + weights["soil"]     * df["factor_soil"]
         + weights["access"]   * df["factor_access"]
         + weights["bushfire"] * df["factor_bushfire"]
+        + weights["scale"]    * df["factor_scale"]
     ).to_numpy()
 
 

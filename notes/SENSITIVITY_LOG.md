@@ -130,3 +130,49 @@ JSON: `notes/sensitivity/20260905T061331.json`
 
 ---
 
+## 2026-09-05T22:07:54+08:00
+
+- **Shift**: ±25%
+- **Scored cells**: 1,991 across 15 LGAs
+- **Baseline weights**: water=0.28, rainfall=0.25, soil=0.25, access=0.08, bushfire=0.04, scale=0.10
+- **Worst ρ (cells)**: 0.9935
+- **Worst ρ (LGAs)**: 0.9821
+- **Verdict**: STABLE — ranking is data-driven.
+
+| Weight | Shift | ρ cells | ρ LGAs |
+|---|---|---|---|
+| water | -25% | 0.9935 | 0.9929 |
+| water | +25% | 0.9984 | 0.9893 |
+| rainfall | -25% | 0.9965 | 0.9821 |
+| rainfall | +25% | 0.9970 | 0.9929 |
+| soil | -25% | 0.9991 | 0.9964 |
+| soil | +25% | 0.9992 | 0.9964 |
+| access | -25% | 0.9999 | 1.0000 |
+| access | +25% | 0.9999 | 1.0000 |
+| bushfire | -25% | 0.9997 | 0.9964 |
+| bushfire | +25% | 0.9997 | 1.0000 |
+| scale | -25% | 0.9966 | 0.9964 |
+| scale | +25% | 0.9970 | 0.9821 |
+
+Baseline LGA ranking:
+
+- 0.786 — DENMARK, SHIRE OF
+- 0.753 — PLANTAGENET, SHIRE OF
+- 0.728 — BRIDGETOWN-GREENBUSHES, SHIRE OF
+- 0.721 — BOYUP BROOK, SHIRE OF
+- 0.701 — NANNUP, SHIRE OF
+- 0.696 — DONNYBROOK-BALINGUP, SHIRE OF
+- 0.687 — MANJIMUP, SHIRE OF
+- 0.618 — WEST ARTHUR, SHIRE OF
+- 0.613 — HARVEY, SHIRE OF
+- 0.611 — MUNDARING, SHIRE OF
+- 0.607 — NORTHAM, SHIRE OF
+- 0.595 — COLLIE, SHIRE OF
+- 0.595 — AUGUSTA MARGARET RIVER, SHIRE OF
+- 0.587 — BUSSELTON, CITY OF
+- 0.585 — YORK, SHIRE OF
+
+JSON: `notes/sensitivity/20260905T220754.json`
+
+---
+

@@ -29,8 +29,8 @@ function unpackWeights(s: string): Weights | null {
   const parts = s.split(",").map(Number);
   if (parts.length !== FACTOR_ORDER.length) return null;
   if (parts.some((n) => !Number.isFinite(n))) return null;
-  const [water, rainfall, soil, access, bushfire] = parts;
-  return { water, rainfall, soil, access, bushfire };
+  const [water, rainfall, soil, access, bushfire, scale] = parts;
+  return { water, rainfall, soil, access, bushfire, scale };
 }
 
 /**

@@ -93,7 +93,8 @@ CREATE TABLE IF NOT EXISTS hex (
     factor_rainfall       DOUBLE,           -- 0..1 rainfall level × trend penalty
     factor_soil           DOUBLE,           -- 0..1 soil capability sub-score
     factor_access         DOUBLE,           -- 0..1 combined road + townsite
-    factor_bushfire       DOUBLE            -- 0..1 inverse of BPA fraction
+    factor_bushfire       DOUBLE,           -- 0..1 inverse of BPA fraction
+    factor_scale          DOUBLE            -- 0..1 how well the cell's median parcel size matches the active Purpose (broadacre → big blocks; hobby → 1-10 ha blocks)
 );
 
 CREATE TABLE IF NOT EXISTS parcel (

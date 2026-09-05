@@ -85,7 +85,12 @@ export const WEIGHT_TIP: Record<FactorName, string> = {
   bushfire:
     "How much bushfire risk matters. Uses the DFES bushfire-prone area map — " +
     "a high fraction of the cell inside a prone area lowers the score. Affects " +
-    "build cost and insurability. Default 10%.",
+    "build cost and insurability. Default 10% (was 10% in the 5-factor era).",
+  scale:
+    "How much the cell's typical parcel size matches your intent. Broadacre " +
+    "Purposes reward cells full of 100+ ha blocks; Hobby Purposes reward " +
+    "cells full of 1–10 ha blocks. The curve applied here comes from the " +
+    "active Purpose (scale_broadacre vs scale_hobby). Default 12%.",
 };
 
 export const WEIGHTS_INTRO =

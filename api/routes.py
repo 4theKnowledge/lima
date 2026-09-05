@@ -32,12 +32,14 @@ from api.schemas import (
     HexCell,
     HexDetail,
     ParcelSummary,
+    Purpose,
     Sensitivity,
     Weights,
 )
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 WEIGHTS_PATH = PROJECT_ROOT / "scoring" / "weights.yaml"
+PURPOSES_PATH = PROJECT_ROOT / "scoring" / "purposes.yaml"
 SENSITIVITY_DIR = PROJECT_ROOT / "notes" / "sensitivity"
 
 # Best-effort deploy identifier. Set BUILD_ID (or fall back to Railway's
@@ -53,7 +55,7 @@ HEX_COLUMNS = """
     COALESCE(excluded, FALSE) AS excluded,
     exclusion_reasons,
     suitability_score,
-    factor_water, factor_rainfall, factor_soil, factor_access, factor_bushfire,
+    factor_water, factor_rainfall, factor_soil, factor_access, factor_bushfire, factor_scale,
     parcel_count, parcel_area_median_ha,
     gw_proclaimed, sw_proclaimed,
     salinity_idx, bushfire_prone_frac,
@@ -397,6 +399,114 @@ def put_exclusions(body: Exclusions) -> Exclusions:
     apply_exclusions()
     compute_scores()
     return get_exclusions()
+
+
+# ---------------------------------------------------------------------------
+# Purposes — named bundles of weights + exclusions + scale curve.
+# See scoring/purposes.yaml.
+# ---------------------------------------------------------------------------
+
+
+def _load_purposes_yaml() -> dict:
+    with PURPOSES_PATH.open() as f:
+        return yaml.safe_load(f)
+
+
+def _purpose_from_yaml(pid: str, spec: dict) -> Purpose:
+    """Materialise a Purpose. Missing exclusion keys fall through to the
+    current weights.yaml values (so a Purpose can be opinionated only where
+    it needs to be)."""
+    cur_ex = _load_weights_yaml().get("exclusions", {})
+    ex_yaml = spec.get("exclusions", {}) or {}
+    return Purpose(
+        id=pid,
+        label=spec["label"],
+        description=spec.get("description", "").strip(),
+        weights=Weights(**spec["weights"]),
+        scale_curve=spec["scale_curve"],
+        exclusions=Exclusions(
+            gsr_mean_mm_below=ex_yaml.get("gsr_mean_mm_below", cur_ex.get("gsr_mean_mm_below")),
+            capability_class_at_or_above=ex_yaml.get(
+                "capability_class_at_or_above", cur_ex.get("capability_class_at_or_above")
+            ),
+            salinity_idx_at_or_above=ex_yaml.get(
+                "salinity_idx_at_or_above", cur_ex.get("salinity_idx_at_or_above")
+            ),
+            dbca_estate_frac_above=ex_yaml.get(
+                "dbca_estate_frac_above", cur_ex.get("dbca_estate_frac_above")
+            ),
+            summer_max_temp_c_above=ex_yaml.get(
+                "summer_max_temp_c_above", cur_ex.get("summer_max_temp_c_above")
+            ),
+            winter_min_temp_c_below=ex_yaml.get(
+                "winter_min_temp_c_below", cur_ex.get("winter_min_temp_c_below")
+            ),
+            pop_density_per_km2_above=ex_yaml.get(
+                "pop_density_per_km2_above", cur_ex.get("pop_density_per_km2_above")
+            ),
+        ),
+    )
+
+
+@router.get("/purposes", response_model=list[Purpose])
+def list_purposes() -> list[Purpose]:
+    """All Purposes defined in scoring/purposes.yaml. Order preserved."""
+    doc = _load_purposes_yaml()
+    return [_purpose_from_yaml(pid, spec) for pid, spec in doc.items()]
+
+
+@router.get("/purpose/{pid}", response_model=Purpose)
+def get_purpose(pid: str) -> Purpose:
+    doc = _load_purposes_yaml()
+    if pid not in doc:
+        raise HTTPException(status_code=404, detail=f"purpose {pid!r} not found")
+    return _purpose_from_yaml(pid, doc[pid])
+
+
+@router.put("/purpose/{pid}/apply", response_model=Purpose)
+def apply_purpose(pid: str) -> Purpose:
+    """Apply a Purpose: merge its weights, scale_curve, and (non-null) exclusion
+    values into scoring/weights.yaml, then re-run exclude + score.
+
+    Uses ruamel.yaml round-trip so comments and formatting in weights.yaml are
+    preserved (same as PUT /exclusions).
+    """
+    doc = _load_purposes_yaml()
+    if pid not in doc:
+        raise HTTPException(status_code=404, detail=f"purpose {pid!r} not found")
+    spec = doc[pid]
+
+    from ruamel.yaml import YAML
+
+    ryaml = YAML()
+    ryaml.preserve_quotes = True
+    ryaml.indent(mapping=2, sequence=4, offset=2)
+    with WEIGHTS_PATH.open() as f:
+        cfg = ryaml.load(f)
+
+    # Weights overwrite in full (Purpose weights sum to 1.0 by contract).
+    weights_out = cfg.setdefault("weights", {})
+    for k, v in spec["weights"].items():
+        weights_out[k] = float(v)
+
+    # Scale curve — top-level key.
+    cfg["scale_curve"] = str(spec["scale_curve"])
+
+    # Exclusions merge — only non-null Purpose values override.
+    ex_out = cfg.setdefault("exclusions", {})
+    for k, v in (spec.get("exclusions") or {}).items():
+        if v is not None:
+            ex_out[k] = v
+
+    with WEIGHTS_PATH.open("w") as f:
+        ryaml.dump(cfg, f)
+
+    from scoring.exclude import apply as apply_exclusions
+    from scoring.score import compute as compute_scores
+
+    apply_exclusions()
+    compute_scores()
+    return _purpose_from_yaml(pid, spec)
 
 
 @router.get("/sensitivity/latest", response_model=Sensitivity)

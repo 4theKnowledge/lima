@@ -17,6 +17,7 @@ import type {
   HexCell,
   HexDetail,
   ParcelSummary,
+  Purpose,
   Sensitivity,
   Weights,
 } from "./types";
@@ -66,6 +67,9 @@ export const api = {
       body: JSON.stringify(body),
     }),
   sensitivity: () => j<Sensitivity>(`${BASE}/sensitivity/latest`),
+  purposes: () => j<Purpose[]>(`${BASE}/purposes`),
+  applyPurpose: (pid: string) =>
+    j<Purpose>(`${BASE}/purpose/${pid}/apply`, { method: "PUT" }),
   geocode: (q: string) =>
     j<GeocodeResult | null>(`${BASE}/geocode?q=${encodeURIComponent(q)}`),
 };

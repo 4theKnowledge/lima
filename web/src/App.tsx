@@ -13,6 +13,7 @@ import { Toolbar } from "./components/Toolbar";
 import { SelectedChip } from "./components/SelectedChip";
 import { MapControls } from "./components/MapControls";
 import { SearchBox } from "./components/SearchBox";
+import { PurposePicker } from "./components/PurposePicker";
 import { WeightsPanel } from "./components/WeightsPanel";
 import { ExclusionsPanel } from "./components/ExclusionsPanel";
 import { LgaFilter } from "./components/LgaFilter";
@@ -38,6 +39,7 @@ export default function App() {
       <HudPanel>
         <TabBody tab="controls">
           <SearchBox />
+          <PurposePicker />
           <MetricPicker />
           <WeightsPanel />
           <ExclusionsPanel />

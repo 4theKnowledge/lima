@@ -17,12 +17,21 @@ export function liveScore(cell: HexCell, w: Weights): number | null {
     factor_soil: fs,
     factor_access: fa,
     factor_bushfire: fb,
+    factor_scale: fsc,
   } = cell;
-  if (fw == null || fr == null || fs == null || fa == null || fb == null)
+  if (
+    fw == null || fr == null || fs == null ||
+    fa == null || fb == null || fsc == null
+  )
     return null;
   const n = normalisedWeights(w);
   const s =
-    n.water * fw + n.rainfall * fr + n.soil * fs + n.access * fa + n.bushfire * fb;
+    n.water * fw +
+    n.rainfall * fr +
+    n.soil * fs +
+    n.access * fa +
+    n.bushfire * fb +
+    n.scale * fsc;
   return Math.max(0, Math.min(1, s));
 }
 

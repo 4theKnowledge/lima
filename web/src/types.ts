@@ -16,6 +16,7 @@ export type HexCell = {
   factor_soil: number | null;
   factor_access: number | null;
   factor_bushfire: number | null;
+  factor_scale: number | null;
 
   parcel_count: number | null;
   parcel_area_median_ha: number | null;
@@ -68,6 +69,7 @@ export type Weights = {
   soil: number;
   access: number;
   bushfire: number;
+  scale: number;
 };
 
 export type FactorName = keyof Weights;
@@ -77,7 +79,17 @@ export const FACTOR_ORDER: FactorName[] = [
   "soil",
   "access",
   "bushfire",
+  "scale",
 ];
+
+export type Purpose = {
+  id: string;
+  label: string;
+  description: string;
+  weights: Weights;
+  scale_curve: string;
+  exclusions: Exclusions;
+};
 
 export type Exclusions = {
   gsr_mean_mm_below: number | null;

@@ -1,0 +1,177 @@
+{
+  "run_at": "2026-09-05T22:07:54+08:00",
+  "shift_pct": 25.0,
+  "n_cells": 1991,
+  "n_lgas": 15,
+  "baseline_weights": {
+    "water": 0.28,
+    "rainfall": 0.25,
+    "soil": 0.25,
+    "access": 0.08,
+    "bushfire": 0.04,
+    "scale": 0.1
+  },
+  "min_rho_cell": 0.993496129142259,
+  "min_rho_lga": 0.9821428571428571,
+  "verdict": "STABLE \u2014 ranking is data-driven.",
+  "perturbations": [
+    {
+      "factor": "water",
+      "shift": -0.25,
+      "label": "-25%",
+      "sum_before_renorm": 0.9299999999999999,
+      "rho_cell": 0.993496129142259,
+      "rho_lga": 0.9928571428571429
+    },
+    {
+      "factor": "water",
+      "shift": 0.25,
+      "label": "+25%",
+      "sum_before_renorm": 1.07,
+      "rho_cell": 0.9983797236501716,
+      "rho_lga": 0.9892857142857143
+    },
+    {
+      "factor": "rainfall",
+      "shift": -0.25,
+      "label": "-25%",
+      "sum_before_renorm": 0.9375,
+      "rho_cell": 0.9964500192137246,
+      "rho_lga": 0.9821428571428571
+    },
+    {
+      "factor": "rainfall",
+      "shift": 0.25,
+      "label": "+25%",
+      "sum_before_renorm": 1.0625,
+      "rho_cell": 0.9970298914589528,
+      "rho_lga": 0.9928571428571429
+    },
+    {
+      "factor": "soil",
+      "shift": -0.25,
+      "label": "-25%",
+      "sum_before_renorm": 0.9375,
+      "rho_cell": 0.999111145155318,
+      "rho_lga": 0.9964285714285714
+    },
+    {
+      "factor": "soil",
+      "shift": 0.25,
+      "label": "+25%",
+      "sum_before_renorm": 1.0625,
+      "rho_cell": 0.9991772870756085,
+      "rho_lga": 0.9964285714285714
+    },
+    {
+      "factor": "access",
+      "shift": -0.25,
+      "label": "-25%",
+      "sum_before_renorm": 0.9800000000000001,
+      "rho_cell": 0.9999405312645782,
+      "rho_lga": 1.0
+    },
+    {
+      "factor": "access",
+      "shift": 0.25,
+      "label": "+25%",
+      "sum_before_renorm": 1.02,
+      "rho_cell": 0.9999417156826717,
+      "rho_lga": 1.0
+    },
+    {
+      "factor": "bushfire",
+      "shift": -0.25,
+      "label": "-25%",
+      "sum_before_renorm": 0.99,
+      "rho_cell": 0.9996892445744909,
+      "rho_lga": 0.9964285714285714
+    },
+    {
+      "factor": "bushfire",
+      "shift": 0.25,
+      "label": "+25%",
+      "sum_before_renorm": 1.01,
+      "rho_cell": 0.9997001536885106,
+      "rho_lga": 1.0
+    },
+    {
+      "factor": "scale",
+      "shift": -0.25,
+      "label": "-25%",
+      "sum_before_renorm": 0.9750000000000001,
+      "rho_cell": 0.9966118131580002,
+      "rho_lga": 0.9964285714285714
+    },
+    {
+      "factor": "scale",
+      "shift": 0.25,
+      "label": "+25%",
+      "sum_before_renorm": 1.025,
+      "rho_cell": 0.997020516462849,
+      "rho_lga": 0.9821428571428571
+    }
+  ],
+  "baseline_lga_ranking": [
+    {
+      "lga": "DENMARK, SHIRE OF",
+      "mean_suitability": 0.7864992269146303
+    },
+    {
+      "lga": "PLANTAGENET, SHIRE OF",
+      "mean_suitability": 0.753444554371301
+    },
+    {
+      "lga": "BRIDGETOWN-GREENBUSHES, SHIRE OF",
+      "mean_suitability": 0.7276462911286877
+    },
+    {
+      "lga": "BOYUP BROOK, SHIRE OF",
+      "mean_suitability": 0.7205660598165453
+    },
+    {
+      "lga": "NANNUP, SHIRE OF",
+      "mean_suitability": 0.7008186691785386
+    },
+    {
+      "lga": "DONNYBROOK-BALINGUP, SHIRE OF",
+      "mean_suitability": 0.6957680544008595
+    },
+    {
+      "lga": "MANJIMUP, SHIRE OF",
+      "mean_suitability": 0.6871193892645794
+    },
+    {
+      "lga": "WEST ARTHUR, SHIRE OF",
+      "mean_suitability": 0.6183252642783093
+    },
+    {
+      "lga": "HARVEY, SHIRE OF",
+      "mean_suitability": 0.6128065803261367
+    },
+    {
+      "lga": "MUNDARING, SHIRE OF",
+      "mean_suitability": 0.6105491304515331
+    },
+    {
+      "lga": "NORTHAM, SHIRE OF",
+      "mean_suitability": 0.6072468537173852
+    },
+    {
+      "lga": "COLLIE, SHIRE OF",
+      "mean_suitability": 0.5954883445982472
+    },
+    {
+      "lga": "AUGUSTA MARGARET RIVER, SHIRE OF",
+      "mean_suitability": 0.5953273700917024
+    },
+    {
+      "lga": "BUSSELTON, CITY OF",
+      "mean_suitability": 0.5865444488856061
+    },
+    {
+      "lga": "YORK, SHIRE OF",
+      "mean_suitability": 0.5846097610872512
+    }
+  ]
+}

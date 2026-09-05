@@ -1,7 +1,8 @@
 """Stage 2 — compute per-cell suitability score on cells that survived Stage 1.
 
-Reads all tunables from scoring/weights.yaml. Writes 6 columns per hex:
-    factor_water, factor_rainfall, factor_soil, factor_access, factor_bushfire
+Reads all tunables from scoring/weights.yaml. Writes 7 columns per hex:
+    factor_water, factor_rainfall, factor_soil, factor_access, factor_bushfire,
+    factor_scale
     suitability_score = Σ (weight_i × factor_i)
 
 Rules:
@@ -12,6 +13,10 @@ Rules:
     what fraction of the region is scoreable.
   - Sub-scores are stored so the M6 side panel can show decomposition (§7)
     without re-running the whole compute chain.
+
+The active `scale_curve` (which parcel-size curve to apply) is read from
+`weights.yaml → scale_curve`. Applying a Purpose via the API rewrites that
+value so re-scoring picks up the right shape.
 
 Run:
     uv run python -m scoring.score
@@ -29,6 +34,9 @@ from db.snapshot import snapshot
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 WEIGHTS_PATH = PROJECT_ROOT / "scoring" / "weights.yaml"
+
+# Factor names in the order used for sub-score reporting + the weighted sum.
+FACTOR_ORDER = ("water", "rainfall", "soil", "access", "bushfire", "scale")
 
 
 def _load_config() -> dict:
@@ -68,7 +76,7 @@ def _water_score(gw_proclaimed: bool | None, sw_proclaimed: bool | None, water_c
     if gw_proclaimed is None and sw_proclaimed is None:
         return None
     # Treat NULL as "not proclaimed" for the missing one, so we still score
-    # cells that have partial data. Log-level info is enough here.
+    # cells that have partial data.
     gw = bool(gw_proclaimed) if gw_proclaimed is not None else False
     sw = bool(sw_proclaimed) if sw_proclaimed is not None else False
     if gw and sw:
@@ -89,7 +97,7 @@ def _rainfall_score(
     if level is None:
         return None
     if gsr_trend is None:
-        return level   # no trend data → just report level
+        return level
     mult = _interp_curve(trend_curve, gsr_trend)
     if mult is None:
         return level
@@ -122,10 +130,27 @@ def compute() -> None:
     trend_curve = cfg["rainfall_trend_penalty"]
     water_cfg = cfg["water_score"]
 
-    # Sanity: weights must sum to ~1.0.
-    wsum = sum(weights.values())
+    # Which scale curve is active? Purposes set this via API. Fallback to
+    # scale_broadacre if unset, so the module keeps working after a
+    # weights.yaml written by an older tool.
+    scale_curve_name = cfg.get("scale_curve", "scale_broadacre")
+    scale_curve = curves.get(scale_curve_name)
+    if scale_curve is None:
+        raise ValueError(
+            f"weights.yaml → scale_curve = {scale_curve_name!r} but no such "
+            f"curve in curves:. Options: {sorted(k for k in curves if k.startswith('scale_'))}"
+        )
+
+    # Sanity: weights must sum to ~1.0 across all FACTOR_ORDER keys.
+    missing = [k for k in FACTOR_ORDER if k not in weights]
+    if missing:
+        raise ValueError(
+            f"weights.yaml is missing weights for {missing!r}. "
+            f"After adding a new factor you must re-list it in weights: with a value."
+        )
+    wsum = sum(weights[k] for k in FACTOR_ORDER)
     if abs(wsum - 1.0) > 1e-6:
-        raise ValueError(f"weights.yaml `weights` must sum to 1.0, got {wsum:.4f}")
+        raise ValueError(f"weights.yaml `weights` must sum to 1.0 across {FACTOR_ORDER}, got {wsum:.4f}")
 
     con = connect()
     rows = con.execute(
@@ -136,15 +161,17 @@ def compute() -> None:
                gsr_mean_mm, gsr_trend,
                capability_class,
                dist_sealed_road_km, dist_townsite_km,
-               bushfire_prone_frac
+               bushfire_prone_frac,
+               parcel_area_median_ha
         FROM hex
         """
     ).fetchall()
     print(f"[score] Loaded {len(rows):,} hex cells")
+    print(f"[score] Active scale curve: {scale_curve_name}")
 
     updates: list[tuple] = []
     n_scored = 0
-    factor_null_counts = {k: 0 for k in ("water", "rainfall", "soil", "access", "bushfire")}
+    factor_null_counts = {k: 0 for k in FACTOR_ORDER}
 
     for (
         h3,
@@ -157,9 +184,11 @@ def compute() -> None:
         road_km,
         town_km,
         bpa_frac,
+        parcel_ha,
     ) in rows:
         if excluded:
-            updates.append((None, None, None, None, None, None, h3))
+            # Set all sub-scores + suitability to NULL for excluded cells.
+            updates.append((None, None, None, None, None, None, None, h3))
             continue
 
         f_water = _water_score(gw, sw, water_cfg)
@@ -167,30 +196,32 @@ def compute() -> None:
         f_soil = _interp_curve(curves["soil_capability"], cap_class)
         f_access = _access_score(road_km, town_km, curves["access_road"], curves["access_townsite"])
         f_bpa = _interp_curve(curves["bushfire_inverse"], bpa_frac)
+        f_scale = _interp_curve(scale_curve, parcel_ha)
 
         # Track sub-score coverage.
         for name, val in (
             ("water", f_water), ("rainfall", f_rain), ("soil", f_soil),
-            ("access", f_access), ("bushfire", f_bpa),
+            ("access", f_access), ("bushfire", f_bpa), ("scale", f_scale),
         ):
             if val is None:
                 factor_null_counts[name] += 1
 
         # Only compute suitability if all inputs present.
-        if None in (f_water, f_rain, f_soil, f_access, f_bpa):
+        if None in (f_water, f_rain, f_soil, f_access, f_bpa, f_scale):
             suit = None
         else:
             suit = (
-                weights["water"] * f_water
+                weights["water"]    * f_water
                 + weights["rainfall"] * f_rain
-                + weights["soil"] * f_soil
-                + weights["access"] * f_access
+                + weights["soil"]     * f_soil
+                + weights["access"]   * f_access
                 + weights["bushfire"] * f_bpa
+                + weights["scale"]    * f_scale
             )
             suit = max(0.0, min(1.0, suit))
             n_scored += 1
 
-        updates.append((f_water, f_rain, f_soil, f_access, f_bpa, suit, h3))
+        updates.append((f_water, f_rain, f_soil, f_access, f_bpa, f_scale, suit, h3))
 
     con.executemany(
         """
@@ -200,6 +231,7 @@ def compute() -> None:
             factor_soil = ?,
             factor_access = ?,
             factor_bushfire = ?,
+            factor_scale = ?,
             suitability_score = ?
         WHERE h3 = ?
         """,
@@ -230,15 +262,16 @@ def compute() -> None:
     top = con.execute(
         """
         SELECT h3, lga, suitability_score,
-               factor_water, factor_rainfall, factor_soil, factor_access, factor_bushfire
+               factor_water, factor_rainfall, factor_soil,
+               factor_access, factor_bushfire, factor_scale
         FROM hex WHERE suitability_score IS NOT NULL
         ORDER BY suitability_score DESC LIMIT 10
         """
     ).fetchall()
-    for h, lga, s, fw, fr, fs, fa, fb in top:
+    for h, lga, s, fw, fr, fs, fa, fb, fscale in top:
         print(
             f"    {h}  {lga:34s} score={s:.3f}  "
-            f"(w={fw:.2f} r={fr:.2f} s={fs:.2f} a={fa:.2f} b={fb:.2f})"
+            f"(w={fw:.2f} r={fr:.2f} s={fs:.2f} a={fa:.2f} b={fb:.2f} sc={fscale:.2f})"
         )
     con.close()
     snapshot()

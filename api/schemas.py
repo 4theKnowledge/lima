@@ -80,6 +80,7 @@ class Weights(BaseModel):
     soil: float
     access: float
     bushfire: float
+    scale: float
 
 
 class Exclusions(BaseModel):
@@ -96,6 +97,18 @@ class Exclusions(BaseModel):
     #   rural SW ~ 0.1-5 /km²; townsites ~ tens+; metro Perth ~ hundreds+.
     #   Excludes above (peri-urban / urban).
     pop_density_per_km2_above: float | None = None
+
+
+class Purpose(BaseModel):
+    """A named preset: weights + exclusions + scale curve. Loaded from
+    scoring/purposes.yaml and applied via PUT /purpose/{id}/apply."""
+
+    id: str
+    label: str
+    description: str
+    weights: Weights
+    scale_curve: str
+    exclusions: Exclusions
 
 
 class Sensitivity(BaseModel):

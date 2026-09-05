@@ -19,6 +19,7 @@ export const keys = {
   weights: ["weights"] as const,
   exclusions: ["exclusions"] as const,
   sensitivity: ["sensitivity"] as const,
+  purposes: ["purposes"] as const,
   geocode: (q: string) => ["geocode", q] as const,
 };
 
@@ -80,6 +81,27 @@ export function usePutExclusions() {
       // excluded/score columns.
       qc.invalidateQueries({ queryKey: ["hex"] });
       qc.invalidateQueries({ queryKey: ["hexDetail"] });
+      qc.invalidateQueries({ queryKey: ["exclusions"] });
+      qc.invalidateQueries({ queryKey: ["health"] });
+      qc.invalidateQueries({ queryKey: ["dataStatus"] });
+    },
+  });
+}
+
+export function usePurposes() {
+  return useQuery({ queryKey: keys.purposes, queryFn: api.purposes });
+}
+
+export function useApplyPurpose() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (pid: string) => api.applyPurpose(pid),
+    onSuccess: () => {
+      // Applying a Purpose rewrites weights.yaml + re-runs exclude + score.
+      // Everything derived from the snapshot needs refetching.
+      qc.invalidateQueries({ queryKey: ["hex"] });
+      qc.invalidateQueries({ queryKey: ["hexDetail"] });
+      qc.invalidateQueries({ queryKey: ["weights"] });
       qc.invalidateQueries({ queryKey: ["exclusions"] });
       qc.invalidateQueries({ queryKey: ["health"] });
       qc.invalidateQueries({ queryKey: ["dataStatus"] });

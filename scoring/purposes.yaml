@@ -1,0 +1,69 @@
+# Purpose bundles — named presets for "what am I looking for?"
+#
+# Applying a Purpose merges its `weights` + `exclusions` + `scale_curve` into
+# scoring/weights.yaml (via the API's PUT /purpose/{id}/apply endpoint), then
+# re-runs Stage 1 exclusion + Stage 2 score. The operator can then tweak from
+# there; the UI shows "Purpose: <name> (custom)" once weights or exclusions
+# drift from the loaded preset.
+#
+# Weights must sum to 1.0 within each Purpose. Any exclusion key set to null
+# reverts to the current value in weights.yaml (i.e. the Purpose doesn't
+# override it). Any key not listed uses the current value.
+#
+# Adding a Purpose: add a new top-level key here + one entry in the frontend
+# Purpose selector labels map.
+
+broadacre:
+  label: "Broadacre farming"
+  description: >-
+    Commercial farming on freehold blocks of 100+ ha. Water access, rainfall,
+    and soil capability dominate. Big blocks preferred; small hobby subdivisions
+    down-weighted. Bushfire matters less (paddocks, not houses).
+  weights:
+    water:    0.28
+    rainfall: 0.25
+    soil:     0.25
+    access:   0.08
+    bushfire: 0.04
+    scale:    0.10
+  scale_curve: scale_broadacre
+  exclusions:
+    # Broadacre needs more rain than the default 350 mm — cropping/pasture at
+    # 400 mm is marginal.
+    gsr_mean_mm_below: 400
+    # Only A/B1 soils (class ≤ 3).
+    capability_class_at_or_above: 4
+    # Brackish (>3000 mg/L) groundwater rules out most stock/irrigation.
+    salinity_idx_at_or_above: 4
+    # Keep DBCA-heavy cells out.
+    dbca_estate_frac_above: 0.9
+    # Peri-urban land-use conflict.
+    pop_density_per_km2_above: 20
+
+hobby:
+  label: "Hobby / off-grid (1-10 ha)"
+  description: >-
+    Small block for personal use — hobby livestock, weekender, off-grid retreat.
+    Bushfire, water quality and rainfall for tank capture matter most. Cells
+    with 1-10 ha blocks preferred; broadacre-only cells (500 ha+) score low.
+    Sealed road + townsite distance both count.
+  weights:
+    water:    0.18
+    rainfall: 0.20
+    soil:     0.08
+    access:   0.18
+    bushfire: 0.20
+    scale:    0.16
+  scale_curve: scale_hobby
+  exclusions:
+    # Hobby needs enough roof-tank fill; 500 mm is the practical floor for
+    # a 200 m² roof.
+    gsr_mean_mm_below: 500
+    # Salt water from a bore is a real problem for household + garden use.
+    salinity_idx_at_or_above: 3
+    # Soil constraint relaxed — hobby doesn't need class-1 land.
+    capability_class_at_or_above: 6
+    # DBCA exclusion relaxed — being next to a park is a feature.
+    dbca_estate_frac_above: 0.95
+    # No population exclusion — hobby buyers often want peri-urban.
+    pop_density_per_km2_above: 10000

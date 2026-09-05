@@ -311,12 +311,13 @@ export const useUi = create<UiState>((set) => ({
 export function normalisedWeights(w: Weights): Weights {
   const total = FACTOR_ORDER.reduce((acc, k) => acc + w[k], 0);
   if (total <= 0)
-    return { water: 0, rainfall: 0, soil: 0, access: 0, bushfire: 0 };
+    return { water: 0, rainfall: 0, soil: 0, access: 0, bushfire: 0, scale: 0 };
   return {
     water: w.water / total,
     rainfall: w.rainfall / total,
     soil: w.soil / total,
     access: w.access / total,
     bushfire: w.bushfire / total,
+    scale: w.scale / total,
   };
 }
