@@ -1,0 +1,94 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* -------- Theme tokens --------
+   All colour values driving the HUD live here as CSS custom properties.
+   Switching the `data-theme` attribute on <html> flips every panel at
+   once without a full re-render cascade. */
+
+:root {
+  /* Dark is the default; explicit for clarity. */
+  --page-bg: #0a0a0c;
+  --page-fg: 240 240 245;
+  --panel-bg: 17 17 20;
+  --panel-bg-alpha: 0.86;
+  --panel-border: 255 255 255;
+  --panel-border-alpha: 0.08;
+  --panel-fg: 240 240 245;
+  --panel-muted: 160 160 175;
+  --panel-tint: 255 255 255; /* rgba(var(--panel-tint) / 0.05) → subtle surface */
+  --accent: 74 222 128; /* emerald-400 */
+}
+
+:root[data-theme="light"] {
+  --page-bg: #f5f6f8;
+  --page-fg: 24 24 28;
+  --panel-bg: 255 255 255;
+  --panel-bg-alpha: 0.92;
+  --panel-border: 0 0 0;
+  --panel-border-alpha: 0.08;
+  --panel-fg: 24 24 28;
+  --panel-muted: 96 100 108;
+  --panel-tint: 0 0 0;
+  --accent: 5 150 105; /* emerald-600 for contrast on light */
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+    margin: 0;
+    background: var(--page-bg);
+    color: rgb(var(--page-fg));
+    font-family: theme("fontFamily.sans");
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+}
+
+@layer components {
+  .panel {
+    background-color: rgb(var(--panel-bg) / var(--panel-bg-alpha));
+    color: rgb(var(--panel-fg));
+    border: 1px solid rgb(var(--panel-border) / var(--panel-border-alpha));
+    @apply backdrop-blur-md rounded-xl shadow-2xl;
+  }
+  .panel-title {
+    color: rgb(var(--panel-muted));
+    @apply text-xs uppercase tracking-widest font-medium;
+  }
+  .hud-button {
+    background-color: rgb(var(--panel-tint) / 0.05);
+    border: 1px solid rgb(var(--panel-tint) / 0.1);
+    @apply inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition;
+  }
+  .hud-button:hover {
+    background-color: rgb(var(--panel-tint) / 0.1);
+  }
+  .hud-button-primary {
+    background-color: rgb(var(--accent) / 0.2);
+    border-color: rgb(var(--accent) / 0.4);
+    color: rgb(var(--accent));
+    @apply inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition;
+  }
+  .hud-button-primary:hover {
+    background-color: rgb(var(--accent) / 0.3);
+  }
+  .field-label {
+    color: rgb(var(--panel-muted));
+    @apply text-[11px] uppercase tracking-wider mb-1;
+  }
+  /* Range slider baseline — Tailwind doesn't ship one. */
+  input[type="range"] {
+    accent-color: rgb(var(--accent));
+    @apply w-full;
+  }
+}
+
+/* Hide MapLibre's default logo/attribution — we're not using their tiles */
+.maplibregl-ctrl-logo,
+.maplibregl-ctrl-attrib {
+  display: none !important;
+}

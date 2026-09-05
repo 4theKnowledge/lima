@@ -1,0 +1,168 @@
+{
+  "run_at": "2026-09-05T06:13:31+08:00",
+  "shift_pct": 25.0,
+  "n_cells": 3815,
+  "n_lgas": 17,
+  "baseline_weights": {
+    "water": 0.3,
+    "rainfall": 0.25,
+    "soil": 0.2,
+    "access": 0.15,
+    "bushfire": 0.1
+  },
+  "min_rho_cell": 0.9797742620397492,
+  "min_rho_lga": 0.9754901960784313,
+  "verdict": "STABLE \u2014 ranking is data-driven.",
+  "perturbations": [
+    {
+      "factor": "water",
+      "shift": -0.25,
+      "label": "-25%",
+      "sum_before_renorm": 0.925,
+      "rho_cell": 0.9797742620397492,
+      "rho_lga": 0.9803921568627451
+    },
+    {
+      "factor": "water",
+      "shift": 0.25,
+      "label": "+25%",
+      "sum_before_renorm": 1.075,
+      "rho_cell": 0.9907997580512968,
+      "rho_lga": 0.9926470588235294
+    },
+    {
+      "factor": "rainfall",
+      "shift": -0.25,
+      "label": "-25%",
+      "sum_before_renorm": 0.9375,
+      "rho_cell": 0.9881361652092718,
+      "rho_lga": 0.9754901960784313
+    },
+    {
+      "factor": "rainfall",
+      "shift": 0.25,
+      "label": "+25%",
+      "sum_before_renorm": 1.0625,
+      "rho_cell": 0.9875088563823089,
+      "rho_lga": 0.9828431372549019
+    },
+    {
+      "factor": "soil",
+      "shift": -0.25,
+      "label": "-25%",
+      "sum_before_renorm": 0.9500000000000001,
+      "rho_cell": 0.9981734768726546,
+      "rho_lga": 1.0
+    },
+    {
+      "factor": "soil",
+      "shift": 0.25,
+      "label": "+25%",
+      "sum_before_renorm": 1.05,
+      "rho_cell": 0.9983347865980513,
+      "rho_lga": 0.9877450980392157
+    },
+    {
+      "factor": "access",
+      "shift": -0.25,
+      "label": "-25%",
+      "sum_before_renorm": 0.9625,
+      "rho_cell": 0.9997754008695313,
+      "rho_lga": 0.9975490196078431
+    },
+    {
+      "factor": "access",
+      "shift": 0.25,
+      "label": "+25%",
+      "sum_before_renorm": 1.0375,
+      "rho_cell": 0.9997865453824836,
+      "rho_lga": 0.9950980392156863
+    },
+    {
+      "factor": "bushfire",
+      "shift": -0.25,
+      "label": "-25%",
+      "sum_before_renorm": 0.9750000000000001,
+      "rho_cell": 0.9985375758436235,
+      "rho_lga": 0.9975490196078431
+    },
+    {
+      "factor": "bushfire",
+      "shift": 0.25,
+      "label": "+25%",
+      "sum_before_renorm": 1.025,
+      "rho_cell": 0.9987114536732304,
+      "rho_lga": 0.9950980392156863
+    }
+  ],
+  "baseline_lga_ranking": [
+    {
+      "lga": "DENMARK, SHIRE OF",
+      "mean_suitability": 0.8050663697367572
+    },
+    {
+      "lga": "BRIDGETOWN-GREENBUSHES, SHIRE OF",
+      "mean_suitability": 0.7463364635416068
+    },
+    {
+      "lga": "DONNYBROOK-BALINGUP, SHIRE OF",
+      "mean_suitability": 0.7327902704072136
+    },
+    {
+      "lga": "PLANTAGENET, SHIRE OF",
+      "mean_suitability": 0.7154312501922779
+    },
+    {
+      "lga": "MANJIMUP, SHIRE OF",
+      "mean_suitability": 0.7051072634345688
+    },
+    {
+      "lga": "NANNUP, SHIRE OF",
+      "mean_suitability": 0.6999904688431859
+    },
+    {
+      "lga": "BOYUP BROOK, SHIRE OF",
+      "mean_suitability": 0.6656898580711118
+    },
+    {
+      "lga": "CRANBROOK, SHIRE OF",
+      "mean_suitability": 0.6605413681219247
+    },
+    {
+      "lga": "HARVEY, SHIRE OF",
+      "mean_suitability": 0.6545675054628047
+    },
+    {
+      "lga": "MUNDARING, SHIRE OF",
+      "mean_suitability": 0.6094974791122986
+    },
+    {
+      "lga": "AUGUSTA MARGARET RIVER, SHIRE OF",
+      "mean_suitability": 0.6038888873114262
+    },
+    {
+      "lga": "BUSSELTON, CITY OF",
+      "mean_suitability": 0.6038871752480697
+    },
+    {
+      "lga": "COLLIE, SHIRE OF",
+      "mean_suitability": 0.5950662188158191
+    },
+    {
+      "lga": "WEST ARTHUR, SHIRE OF",
+      "mean_suitability": 0.5943338931257279
+    },
+    {
+      "lga": "KOJONUP, SHIRE OF",
+      "mean_suitability": 0.5688876656175345
+    },
+    {
+      "lga": "NORTHAM, SHIRE OF",
+      "mean_suitability": 0.5672724174025384
+    },
+    {
+      "lga": "YORK, SHIRE OF",
+      "mean_suitability": 0.5473761110715969
+    }
+  ]
+}

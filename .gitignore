@@ -1,0 +1,62 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# uv / venv
+.venv/
+
+# Secrets
+.env
+.env.local
+
+# Project data
+cache/*
+!cache/raw/
+!cache/manual/
+cache/raw/*
+!cache/raw/.gitkeep
+cache/manual/*
+!cache/manual/.gitkeep
+db/*.duckdb
+db/*.duckdb.wal
+db/*.duckdb.tmp
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# Frontend (web/) — SPA
+node_modules/
+web/dist/
+web/.vite/
+web/stats.html
+
+# Build / cache
+*.tsbuildinfo
+.eslintcache
+.parcel-cache/
+
+# Env — Vite reads .env.* at build time; only .env.example is committed
+web/.env
+web/.env.local
+web/.env.*.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+*.log
+
+# Coverage / test output
+coverage/
+.nyc_output/
+
+# Editor local settings that occasionally sneak into web/
+web/.idea/
+web/.vscode/

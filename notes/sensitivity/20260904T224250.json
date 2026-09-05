@@ -1,0 +1,120 @@
+{
+  "run_at": "2026-09-04T22:42:50+08:00",
+  "shift_pct": 25.0,
+  "n_cells": 1567,
+  "n_lgas": 5,
+  "baseline_weights": {
+    "water": 0.3,
+    "rainfall": 0.25,
+    "soil": 0.2,
+    "access": 0.15,
+    "bushfire": 0.1
+  },
+  "min_rho_cell": 0.9828042286459582,
+  "min_rho_lga": 1.0,
+  "verdict": "STABLE \u2014 ranking is data-driven.",
+  "perturbations": [
+    {
+      "factor": "water",
+      "shift": -0.25,
+      "label": "-25%",
+      "sum_before_renorm": 0.925,
+      "rho_cell": 0.9828042286459582,
+      "rho_lga": 1.0
+    },
+    {
+      "factor": "water",
+      "shift": 0.25,
+      "label": "+25%",
+      "sum_before_renorm": 1.075,
+      "rho_cell": 0.9948667596490144,
+      "rho_lga": 1.0
+    },
+    {
+      "factor": "rainfall",
+      "shift": -0.25,
+      "label": "-25%",
+      "sum_before_renorm": 0.9375,
+      "rho_cell": 0.9931070921719332,
+      "rho_lga": 1.0
+    },
+    {
+      "factor": "rainfall",
+      "shift": 0.25,
+      "label": "+25%",
+      "sum_before_renorm": 1.0625,
+      "rho_cell": 0.9884749998041452,
+      "rho_lga": 1.0
+    },
+    {
+      "factor": "soil",
+      "shift": -0.25,
+      "label": "-25%",
+      "sum_before_renorm": 0.9500000000000001,
+      "rho_cell": 0.9990830349480196,
+      "rho_lga": 1.0
+    },
+    {
+      "factor": "soil",
+      "shift": 0.25,
+      "label": "+25%",
+      "sum_before_renorm": 1.05,
+      "rho_cell": 0.999216188099986,
+      "rho_lga": 1.0
+    },
+    {
+      "factor": "access",
+      "shift": -0.25,
+      "label": "-25%",
+      "sum_before_renorm": 0.9625,
+      "rho_cell": 0.9997700079085394,
+      "rho_lga": 1.0
+    },
+    {
+      "factor": "access",
+      "shift": 0.25,
+      "label": "+25%",
+      "sum_before_renorm": 1.0375,
+      "rho_cell": 0.9997745736940993,
+      "rho_lga": 1.0
+    },
+    {
+      "factor": "bushfire",
+      "shift": -0.25,
+      "label": "-25%",
+      "sum_before_renorm": 0.9750000000000001,
+      "rho_cell": 0.9983970786856505,
+      "rho_lga": 1.0
+    },
+    {
+      "factor": "bushfire",
+      "shift": 0.25,
+      "label": "+25%",
+      "sum_before_renorm": 1.025,
+      "rho_cell": 0.9987293892830185,
+      "rho_lga": 1.0
+    }
+  ],
+  "baseline_lga_ranking": [
+    {
+      "lga": "BRIDGETOWN-GREENBUSHES, SHIRE OF",
+      "mean_suitability": 0.7463364635416068
+    },
+    {
+      "lga": "DONNYBROOK-BALINGUP, SHIRE OF",
+      "mean_suitability": 0.7327902704072136
+    },
+    {
+      "lga": "MANJIMUP, SHIRE OF",
+      "mean_suitability": 0.7051072634345688
+    },
+    {
+      "lga": "NANNUP, SHIRE OF",
+      "mean_suitability": 0.6999904688431859
+    },
+    {
+      "lga": "BOYUP BROOK, SHIRE OF",
+      "mean_suitability": 0.6656898580711716
+    }
+  ]
+}
