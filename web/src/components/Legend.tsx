@@ -51,11 +51,9 @@ export function Legend() {
   const [reservedOpen, setReservedOpen] = useState(false);
   const isMobile = useMedia("(max-width: 640px)");
 
-  // On mobile the bottom sheet peek strip covers ~100px of the bottom
-  // edge. Hide the legend entirely when the sheet is open (it'd be
-  // obscured anyway); otherwise dock it above the peek.
-  if (isMobile && panelOpen) return null;
-
+  // NOTE: all hooks must be called before any early return, otherwise
+  // React throws "rendered fewer hooks" (#310) when isMobile+panelOpen
+  // flips. Keep the useMemo/useState calls above the null-guard.
   const cells = useMemo(
     () => (rows ? applyLiveScoring(rows, weights) : []),
     [rows, weights],
@@ -75,6 +73,10 @@ export function Legend() {
 
   const metricLabel =
     METRIC_OPTIONS.find((m) => m.value === metric)?.label ?? metric;
+
+  // On mobile the bottom sheet covers the legend when open. Skip the
+  // render entirely (all hooks above have already run).
+  if (isMobile && panelOpen) return null;
 
   return (
     <aside
