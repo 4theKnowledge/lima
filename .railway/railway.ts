@@ -24,7 +24,15 @@ export default defineRailway(() => {
     env: {
       APP_PASSCODE: preserve(),
       CORS_ORIGINS: preserve(),
-      // See above comment re AWS_* + SNAPSHOT_KEY — set out-of-band.
+      // Bucket credentials + object key. Values set out-of-band via
+      // `railway variables --set` after `railway bucket credentials`.
+      // Declared here with preserve() so IaC keeps them instead of
+      // deleting undeclared vars.
+      AWS_ENDPOINT_URL: preserve(),
+      AWS_ACCESS_KEY_ID: preserve(),
+      AWS_SECRET_ACCESS_KEY: preserve(),
+      AWS_S3_BUCKET_NAME: preserve(),
+      SNAPSHOT_KEY: preserve(),
     },
   });
 
