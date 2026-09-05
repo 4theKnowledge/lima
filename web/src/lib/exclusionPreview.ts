@@ -3,10 +3,12 @@
  * hex slice, compared to the currently-applied exclusion state.
  *
  * Mirrors the predicates in `scoring/exclude.py`:
- *   - gsr_mean_mm_below           : gsr_mean_mm < X
- *   - capability_class_at_or_above: capability_class >= X
- *   - salinity_idx_at_or_above    : salinity_idx >= X
- *   - dbca_estate_frac_above      : dbca_estate_frac > X
+ *   - gsr_mean_mm_below            : gsr_mean_mm < X
+ *   - capability_class_at_or_above : capability_class >= X
+ *   - salinity_idx_at_or_above     : salinity_idx >= X
+ *   - dbca_estate_frac_above       : dbca_estate_frac > X
+ *   - summer_max_temp_c_above      : summer_max_temp_c >= X
+ *   - winter_min_temp_c_below      : winter_min_temp_c <= X
  *
  * The server also considers `parcel_count_below` and other rules; those
  * aren't editable in the UI right now, so they carry over from whichever
@@ -53,6 +55,18 @@ function draftExcludes(cell: HexCell, draft: Exclusions): boolean {
     draft.dbca_estate_frac_above != null &&
     cell.dbca_estate_frac != null &&
     cell.dbca_estate_frac > draft.dbca_estate_frac_above
+  )
+    return true;
+  if (
+    draft.summer_max_temp_c_above != null &&
+    cell.summer_max_temp_c != null &&
+    cell.summer_max_temp_c >= draft.summer_max_temp_c_above
+  )
+    return true;
+  if (
+    draft.winter_min_temp_c_below != null &&
+    cell.winter_min_temp_c != null &&
+    cell.winter_min_temp_c <= draft.winter_min_temp_c_below
   )
     return true;
   return false;

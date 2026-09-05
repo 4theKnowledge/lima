@@ -81,3 +81,11 @@ For manual downloads (SLIP portal), record: date | source | dataset code | scope
 2026-09-05 | DBCA-011 | dbca | statewide | 13,482 polygons | 6403/11002 cells with DBCA overlap
 2026-09-05 | LGATE-195 | roads | AOI-clipped | 104,812 sealed segments | distance computed for 11002 cells
 2026-09-05 | SILO | rainfall | AOI | monthly_rain 1970-2024 | 10646/11002 cells with baseline, 10646 with trend
+2026-09-05 | SILO | min_temp | AOI | daily 2018-2020 | 10646/11002 cells populated in winter_min_temp_c
+2026-09-05 | SILO | min_temp | AOI | daily 2020-2020 | 10646/11002 cells populated in winter_min_temp_c
+2026-09-05 | SILO | min_temp | AOI | daily 2020-2020 | 10646/11002 cells populated in winter_min_temp_c
+2026-09-05 | SILO | max_temp | AOI | daily 1991-2020 | 10646/11002 cells populated in summer_max_temp_c
+2026-09-05 | SILO | min_temp | AOI | daily 1991-2020 | 10646/11002 cells populated in winter_min_temp_c
+2026-09-05 | SILO | max_temp | AOI | daily 1991-2020 | 10646/11002 cells populated in summer_max_temp_c
+2026-09-05 | SILO | min_temp | AOI | daily 1991-2020 | 10646/11002 cells populated in winter_min_temp_c
+2026-09-05 | SILO | evap_pan | AOI | daily 1991-2020 | 11002/11002 cells populated in evap_annual_mm

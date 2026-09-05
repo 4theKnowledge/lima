@@ -111,6 +111,14 @@ export const EXCLUSION_TIP = {
     "Exclude cells that are mostly national park, state forest, or nature " +
     "reserve. Value is the fraction of the cell inside DBCA-managed land — " +
     "these areas have effectively no buyable land. Set to 1.0 to disable.",
+  summer_max_temp_c_above:
+    "Exclude cells with mean summer max (Dec–Feb daily max, 1991–2020) at or " +
+    "above X °C. Heat stress for stock, crops, humans. Set to 40 to disable — " +
+    "no SW/wheatbelt cell hits that. Try 34 for a temperate-only Purpose.",
+  winter_min_temp_c_below:
+    "Exclude cells with mean winter min (Jun–Aug daily min, 1991–2020) at or " +
+    "below X °C. Targets frost-sensitive enterprises (citrus, avocado). Set " +
+    "to −10 to disable. Try 4 for a frost-averse hobby or citrus block.",
 } as const;
 
 export const METRIC_TIP: Record<Metric, string> = {
@@ -158,6 +166,31 @@ export const METRIC_TIP: Record<Metric, string> = {
   gsr_trend:
     "How much growing-season rainfall has changed since 1970, in mm per " +
     "decade. Negative values (drying) are the norm in the South West.",
+  summer_max_temp_c:
+    "Mean daily maximum temperature across December–February, 1991–2020 " +
+    "baseline. High values = heat stress for stock, crops, humans. SILO " +
+    "daily grids aggregated to a 30-year climatology.",
+  winter_min_temp_c:
+    "Mean daily minimum temperature across June–August, 1991–2020 baseline. " +
+    "Low values proxy frost risk and winter comfort/heating cost.",
+  evap_annual_mm:
+    "Mean annual Class A pan evaporation, 1991–2020 baseline. Read alongside " +
+    "rainfall — high evap + low rain = arid. High is worse for water balance.",
+  solar_annual_mj:
+    "Mean daily solar radiation (MJ/m²/day), annual, 1991–2020 baseline. " +
+    "Relevant for horticulture, viticulture, and off-grid solar viability.",
+  vp_annual_hpa:
+    "Mean daily vapour pressure at 09:00 (hPa), annual, 1991–2020 baseline. " +
+    "Higher = more humid; relevant for disease pressure on crops and " +
+    "human comfort.",
+  summer_max_trend_c_per_decade:
+    "Change in mean summer max temperature (Dec–Feb daily max) per decade, " +
+    "linear regression 1970–latest. Positive values (warming) are the norm; " +
+    "read alongside rainfall trend as the twin climate-change signals.",
+  winter_min_trend_c_per_decade:
+    "Change in mean winter min temperature (Jun–Aug daily min) per decade, " +
+    "linear regression 1970–latest. Rising = fewer frosts (mildly good for " +
+    "hobby/citrus) but also part of the warming signal — interpret via Purpose.",
 };
 
 export const LEGEND_TIP = {
@@ -208,6 +241,13 @@ export const INSPECTOR_TIP_SOURCE: Partial<Record<string, SourceKey>> = {
   roadDist: "LGATE-195",
   rainMean: "SILO",
   rainTrend: "SILO",
+  summerMax: "SILO",
+  winterMin: "SILO",
+  evap: "SILO",
+  solar: "SILO",
+  vp: "SILO",
+  summerMaxTrend: "SILO",
+  winterMinTrend: "SILO",
 };
 
 export const INSPECTOR_TIP = {
@@ -270,6 +310,36 @@ export const INSPECTOR_TIP = {
     "How much growing-season rainfall has changed since 1970, in millimetres " +
     "per decade. Negative values (drying) are the norm in the South West and " +
     "projected to continue — worth weighting heavily.",
+  summerMax:
+    "Mean daily maximum temperature across December–February, 1991–2020 " +
+    "baseline. Higher = more heat stress on stock, crops and humans. Coastal " +
+    "cells typically read ~26 °C, inland wheatbelt cells can hit 33 °C+.",
+  winterMin:
+    "Mean daily minimum temperature across June–August, 1991–2020 baseline. " +
+    "Lower = more frost. Values under ~4 °C flag cells where frost-sensitive " +
+    "crops (avocado, citrus, some vines) will struggle.",
+  evap:
+    "Mean annual Class A pan evaporation, 1991–2020 baseline. Read alongside " +
+    "rainfall — high evap + low rain means water leaves the ground faster " +
+    "than it arrives, and irrigation or bore water becomes essential.",
+  solar:
+    "Mean daily solar radiation (MJ/m²/day), annual, 1991–2020 baseline. " +
+    "Matters for perennial horticulture yield, off-grid solar system sizing, " +
+    "and grape ripening. Little variation across the SW; more across the state.",
+  vp:
+    "Mean daily vapour pressure at 09:00 (hPa), annual, 1991–2020 baseline. " +
+    "Higher values mean more humid air. Coastal cells run higher; inland " +
+    "wheatbelt is drier. Relevant for disease pressure and human comfort.",
+  summerMaxTrend:
+    "Change in mean summer max temperature per decade, linear regression " +
+    "1970 to latest. Positive = warming, the dominant signal in this region. " +
+    "Read alongside rainfall trend — cells that are warming AND drying are " +
+    "on a materially different trajectory to stable ones.",
+  winterMinTrend:
+    "Change in mean winter min temperature per decade, linear regression " +
+    "1970 to latest. Rising values mean fewer frost nights over time — mildly " +
+    "good for frost-sensitive crops, but also a warming signal. Interpret " +
+    "based on Purpose.",
   parcelsTotal:
     "Sum of the areas of all parcels whose centroid falls inside this cell " +
     "(hectares).",

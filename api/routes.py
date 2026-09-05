@@ -60,7 +60,13 @@ HEX_COLUMNS = """
     capability_class,
     dist_townsite_km, dist_sealed_road_km,
     dbca_estate_frac,
-    gsr_mean_mm, gsr_trend
+    gsr_mean_mm, gsr_trend,
+    summer_max_temp_c, winter_min_temp_c,
+    evap_annual_mm, solar_annual_mj, vp_annual_hpa
+    -- Trend columns re-added once the ALTER runs after the current
+    -- temperature ingest finishes and its `--var max_temp --var min_temp`
+    -- follow-up populates them:
+    --   summer_max_trend_c_per_decade, winter_min_trend_c_per_decade
 """
 
 
@@ -138,6 +144,36 @@ _SOURCE_COLUMNS = [
         "rainfall",
         "SILO growing-season rainfall",
         "gsr_mean_mm",
+        "https://www.longpaddock.qld.gov.au/silo/gridded-data/",
+    ),
+    (
+        "summer_max_temp",
+        "SILO summer max temperature (Dec-Feb)",
+        "summer_max_temp_c",
+        "https://www.longpaddock.qld.gov.au/silo/gridded-data/",
+    ),
+    (
+        "winter_min_temp",
+        "SILO winter min temperature (Jun-Aug)",
+        "winter_min_temp_c",
+        "https://www.longpaddock.qld.gov.au/silo/gridded-data/",
+    ),
+    (
+        "evap",
+        "SILO annual pan evaporation",
+        "evap_annual_mm",
+        "https://www.longpaddock.qld.gov.au/silo/gridded-data/",
+    ),
+    (
+        "solar",
+        "SILO solar radiation",
+        "solar_annual_mj",
+        "https://www.longpaddock.qld.gov.au/silo/gridded-data/",
+    ),
+    (
+        "vp",
+        "SILO vapour pressure",
+        "vp_annual_hpa",
         "https://www.longpaddock.qld.gov.au/silo/gridded-data/",
     ),
 ]
@@ -313,6 +349,8 @@ def get_exclusions() -> Exclusions:
         capability_class_at_or_above=ex.get("capability_class_at_or_above"),
         salinity_idx_at_or_above=ex.get("salinity_idx_at_or_above"),
         dbca_estate_frac_above=ex.get("dbca_estate_frac_above"),
+        summer_max_temp_c_above=ex.get("summer_max_temp_c_above"),
+        winter_min_temp_c_below=ex.get("winter_min_temp_c_below"),
     )
 
 

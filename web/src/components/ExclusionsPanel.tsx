@@ -31,7 +31,9 @@ export function ExclusionsPanel() {
     (draft.gsr_mean_mm_below !== current.gsr_mean_mm_below ||
       draft.capability_class_at_or_above !== current.capability_class_at_or_above ||
       draft.salinity_idx_at_or_above !== current.salinity_idx_at_or_above ||
-      draft.dbca_estate_frac_above !== current.dbca_estate_frac_above);
+      draft.dbca_estate_frac_above !== current.dbca_estate_frac_above ||
+      draft.summer_max_temp_c_above !== current.summer_max_temp_c_above ||
+      draft.winter_min_temp_c_below !== current.winter_min_temp_c_below);
 
   return (
     <section className="space-y-3">
@@ -79,6 +81,26 @@ export function ExclusionsPanel() {
         value={draft.dbca_estate_frac_above ?? 0.9}
         onChange={(v) => set("dbca_estate_frac_above", v)}
         precision={2}
+      />
+      <Slider
+        label="Summer max ≥ X °C (40=disable)"
+        tip={EXCLUSION_TIP.summer_max_temp_c_above}
+        min={28}
+        max={40}
+        step={0.5}
+        value={draft.summer_max_temp_c_above ?? 40}
+        onChange={(v) => set("summer_max_temp_c_above", v)}
+        precision={1}
+      />
+      <Slider
+        label="Winter min ≤ X °C (-10=disable)"
+        tip={EXCLUSION_TIP.winter_min_temp_c_below}
+        min={-10}
+        max={12}
+        step={0.5}
+        value={draft.winter_min_temp_c_below ?? -10}
+        onChange={(v) => set("winter_min_temp_c_below", v)}
+        precision={1}
       />
       {dirty && preview && (
         <div className="rounded-md border border-white/5 bg-white/5 px-2.5 py-2 text-[11px] leading-snug space-y-0.5">

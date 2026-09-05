@@ -307,6 +307,77 @@ export function Inspector() {
           a={trendText(cellA.gsr_trend)}
           b={compareMode && cellB ? trendText(cellB.gsr_trend) : undefined}
         />
+        <Row
+          label="Summer max (Dec-Feb)"
+          tip={INSPECTOR_TIP.summerMax}
+          source={INSPECTOR_TIP_SOURCE.summerMax}
+          a={tempText(cellA.summer_max_temp_c)}
+          b={compareMode && cellB ? tempText(cellB.summer_max_temp_c) : undefined}
+        />
+        <Row
+          label="Winter min (Jun-Aug)"
+          tip={INSPECTOR_TIP.winterMin}
+          source={INSPECTOR_TIP_SOURCE.winterMin}
+          a={tempText(cellA.winter_min_temp_c)}
+          b={compareMode && cellB ? tempText(cellB.winter_min_temp_c) : undefined}
+        />
+        <Row
+          label="Summer max trend (since 1970)"
+          tip={INSPECTOR_TIP.summerMaxTrend}
+          source={INSPECTOR_TIP_SOURCE.summerMaxTrend}
+          a={tempTrendText(cellA.summer_max_trend_c_per_decade)}
+          b={compareMode && cellB ? tempTrendText(cellB.summer_max_trend_c_per_decade) : undefined}
+        />
+        <Row
+          label="Winter min trend (since 1970)"
+          tip={INSPECTOR_TIP.winterMinTrend}
+          source={INSPECTOR_TIP_SOURCE.winterMinTrend}
+          a={tempTrendText(cellA.winter_min_trend_c_per_decade)}
+          b={compareMode && cellB ? tempTrendText(cellB.winter_min_trend_c_per_decade) : undefined}
+        />
+        <Row
+          label="Evaporation (annual)"
+          tip={INSPECTOR_TIP.evap}
+          source={INSPECTOR_TIP_SOURCE.evap}
+          a={cellA.evap_annual_mm != null ? `${cellA.evap_annual_mm.toFixed(0)} mm` : "—"}
+          b={
+            compareMode && cellB
+              ? cellB.evap_annual_mm != null
+                ? `${cellB.evap_annual_mm.toFixed(0)} mm`
+                : "—"
+              : undefined
+          }
+        />
+        <Row
+          label="Solar radiation"
+          tip={INSPECTOR_TIP.solar}
+          source={INSPECTOR_TIP_SOURCE.solar}
+          a={
+            cellA.solar_annual_mj != null
+              ? `${cellA.solar_annual_mj.toFixed(1)} MJ/m²/day`
+              : "—"
+          }
+          b={
+            compareMode && cellB
+              ? cellB.solar_annual_mj != null
+                ? `${cellB.solar_annual_mj.toFixed(1)} MJ/m²/day`
+                : "—"
+              : undefined
+          }
+        />
+        <Row
+          label="Vapour pressure"
+          tip={INSPECTOR_TIP.vp}
+          source={INSPECTOR_TIP_SOURCE.vp}
+          a={cellA.vp_annual_hpa != null ? `${cellA.vp_annual_hpa.toFixed(1)} hPa` : "—"}
+          b={
+            compareMode && cellB
+              ? cellB.vp_annual_hpa != null
+                ? `${cellB.vp_annual_hpa.toFixed(1)} hPa`
+                : "—"
+              : undefined
+          }
+        />
       </section>
 
       {/* Parcels — kept single-cell for now; B's parcel summary would need
@@ -422,6 +493,13 @@ function distText(
 function trendText(v: number | null | undefined): string {
   if (v == null) return "—";
   return `${v >= 0 ? "+" : ""}${v.toFixed(1)} mm/decade`;
+}
+function tempText(v: number | null | undefined): string {
+  return v != null ? `${v.toFixed(1)} °C` : "—";
+}
+function tempTrendText(v: number | null | undefined): string {
+  if (v == null) return "—";
+  return `${v >= 0 ? "+" : ""}${v.toFixed(2)} °C/decade`;
 }
 
 function deltaFmt(

@@ -36,6 +36,16 @@ class HexCell(BaseModel):
     dbca_estate_frac: float | None
     gsr_mean_mm: float | None
     gsr_trend: float | None
+    summer_max_temp_c: float | None
+    winter_min_temp_c: float | None
+    evap_annual_mm: float | None
+    solar_annual_mj: float | None
+    vp_annual_hpa: float | None
+    # Defaults to None so the API still works when the columns haven't been
+    # ALTERed onto the primary DB yet (e.g. between the schema edit and the
+    # ingest that populates them). Once the columns exist the SELECT fills them.
+    summer_max_trend_c_per_decade: float | None = None
+    winter_min_trend_c_per_decade: float | None = None
 
 
 class HexDetail(HexCell):
@@ -76,6 +86,11 @@ class Exclusions(BaseModel):
     capability_class_at_or_above: int | None = None
     salinity_idx_at_or_above: int | None = None
     dbca_estate_frac_above: float | None = None
+    # Climate — SILO 1991-2020 baseline. Range hints in the UI:
+    #   summer_max: ~28-40°C. Excludes at/above (heat stress).
+    #   winter_min: ~-2 to 12°C. Excludes at/below (frost sensitivity).
+    summer_max_temp_c_above: float | None = None
+    winter_min_temp_c_below: float | None = None
 
 
 class Sensitivity(BaseModel):

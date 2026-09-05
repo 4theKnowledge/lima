@@ -47,6 +47,20 @@ CREATE TABLE IF NOT EXISTS hex (
     salinity_idx          INTEGER,           -- DWER-026 salinity_i ordinal, 1 (fresh) .. 10 (hypersaline)
     salinity_tds_class    VARCHAR,           -- human-readable TDS range e.g. '<500', '3000-7000'
 
+    -- temperature + evap + solar + humidity (SILO daily grids, 1991-2020 baseline)
+    summer_max_temp_c     DOUBLE,            -- mean daily max, Dec-Feb (°C)
+    winter_min_temp_c     DOUBLE,            -- mean daily min, Jun-Aug (°C)
+    evap_annual_mm        DOUBLE,            -- mean annual Class A pan evaporation (mm/year)
+    solar_annual_mj       DOUBLE,            -- mean daily solar radiation, annual (MJ/m²/day)
+    vp_annual_hpa         DOUBLE,            -- mean daily vapour pressure, annual (hPa)
+
+    -- SILO temperature trends since 1970, °C per decade. Matches the rainfall
+    -- trend window (1970-latest). Only computed for max_temp + min_temp — evap,
+    -- solar, vp trends are dominated by correlated signals (temp, cloud, temp
+    -- respectively) so adding them clutters the inspector without adding info.
+    summer_max_trend_c_per_decade   DOUBLE,
+    winter_min_trend_c_per_decade   DOUBLE,
+
     -- constraints
     bushfire_prone_frac   DOUBLE,            -- 0..1 area fraction
 

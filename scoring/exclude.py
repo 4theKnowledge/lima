@@ -72,6 +72,14 @@ def apply() -> None:
         thresh = rules["dbca_estate_frac_above"]
         active.append(("dbca_estate_frac", f"dbca>{thresh:.0%}", f"dbca_estate_frac > {thresh}"))
 
+    if rules.get("summer_max_temp_c_above") is not None and not _column_all_null(con, "summer_max_temp_c"):
+        thresh = rules["summer_max_temp_c_above"]
+        active.append(("summer_max_temp_c", f"summer>={thresh}C", f"summer_max_temp_c >= {thresh}"))
+
+    if rules.get("winter_min_temp_c_below") is not None and not _column_all_null(con, "winter_min_temp_c"):
+        thresh = rules["winter_min_temp_c_below"]
+        active.append(("winter_min_temp_c", f"winter<={thresh}C", f"winter_min_temp_c <= {thresh}"))
+
     print(f"[exclude] Active rules ({len(active)}):")
     for _, label, pred in active:
         print(f"    - {label}  [{pred}]")

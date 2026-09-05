@@ -24,6 +24,17 @@ exclusions:
   # state forests / nature reserves have effectively no buyable land.
   # Default 0.9 excludes cells that are ≥90% DBCA. Set to 1.1 to disable.
   dbca_estate_frac_above: 0.9
+  # Summer max temp (°C, Dec-Feb mean daily max, 1991-2020 baseline).
+  # Excludes cells with mean summer max at or above X — heat stress on stock,
+  # crops and humans. Default 40 sits above every SW/wheatbelt cell (i.e.
+  # disabled). Drop to ~34 to target very hot inland cells for a temperate
+  # Purpose (Denmark hobby block, vineyard).
+  summer_max_temp_c_above: 40
+  # Winter min temp (°C, Jun-Aug mean daily min, 1991-2020 baseline).
+  # Excludes cells with mean winter min at or below X — frost-sensitive
+  # enterprises (avocado, citrus) hate real cold. Default -10 disables (no
+  # SW cell hits that). Set to ~4 for a frost-averse hobby/citrus Purpose.
+  winter_min_temp_c_below: -10
 
 # Stage 2 — weighted sum on survivors. Weights must sum to 1.0.
 weights:

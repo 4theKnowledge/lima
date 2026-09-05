@@ -2,7 +2,7 @@ import { useMemo } from "react";
 
 import { useHex } from "../hooks";
 import { applyLiveScoring } from "../lib/score";
-import { HIGH_IS_BAD, METRIC_OPTIONS, useUi } from "../store";
+import { HIGH_IS_BAD, METRIC_OPTIONS, useUi, type Metric } from "../store";
 import { cn } from "../lib/cn";
 
 type Col = {
@@ -13,7 +13,10 @@ type Col = {
   fmt?: number;
 };
 
-const COLS: Col[] = [
+// Fixed columns always shown. If the currently-sorted metric isn't in this
+// list, we inject a synthesised column for it just after LGA so the value
+// driving the sort is visible.
+const BASE_COLS: Col[] = [
   { k: "h3", label: "H3", mono: true, w: "w-24" },
   { k: "lga", label: "LGA", w: "" },
   { k: "suitability_score", label: "Suit", mono: true, w: "w-16", fmt: 3 },
@@ -24,6 +27,29 @@ const COLS: Col[] = [
   { k: "factor_bushfire", label: "B", mono: true, w: "w-12", fmt: 2 },
   { k: "parcel_count", label: "Parcels", mono: true, w: "w-16" },
 ];
+
+// Column spec for metrics we might sort by but aren't in BASE_COLS. Short
+// labels + fmt digits chosen to fit the narrow ranking panel.
+const METRIC_COL_SPEC: Partial<Record<Metric, { label: string; fmt?: number; w?: string }>> = {
+  parcel_area_median_ha: { label: "Med ha", fmt: 1, w: "w-16" },
+  gw_proclaimed:         { label: "GW", w: "w-14" },
+  sw_proclaimed:         { label: "SW", w: "w-14" },
+  salinity_idx:          { label: "Sal", fmt: 0, w: "w-12" },
+  bushfire_prone_frac:   { label: "BPA", fmt: 2, w: "w-14" },
+  capability_class:      { label: "Cap", fmt: 0, w: "w-12" },
+  dist_townsite_km:      { label: "Town km", fmt: 1, w: "w-16" },
+  dist_sealed_road_km:   { label: "Road km", fmt: 1, w: "w-16" },
+  dbca_estate_frac:      { label: "DBCA", fmt: 2, w: "w-14" },
+  gsr_mean_mm:           { label: "Rain mm", fmt: 0, w: "w-16" },
+  gsr_trend:             { label: "Trend", fmt: 1, w: "w-14" },
+  summer_max_temp_c:     { label: "Smr°C", fmt: 1, w: "w-14" },
+  winter_min_temp_c:     { label: "Wtr°C", fmt: 1, w: "w-14" },
+  evap_annual_mm:        { label: "Evap", fmt: 0, w: "w-16" },
+  solar_annual_mj:       { label: "Solar", fmt: 1, w: "w-14" },
+  vp_annual_hpa:         { label: "VP", fmt: 1, w: "w-14" },
+  summer_max_trend_c_per_decade: { label: "Smr trend", fmt: 2, w: "w-20" },
+  winter_min_trend_c_per_decade: { label: "Wtr trend", fmt: 2, w: "w-20" },
+};
 
 export function RankedTable() {
   const { data: rows } = useHex();
@@ -49,8 +75,29 @@ export function RankedTable() {
   const metricLabel =
     METRIC_OPTIONS.find((m) => m.value === metric)?.label ?? metric;
 
+  // Assemble columns for this render. If the sorted metric already lives in
+  // BASE_COLS just highlight the existing header; otherwise inject a new
+  // column right after LGA so the number driving the sort is visible.
+  const cols = useMemo(() => {
+    const inBase = BASE_COLS.some((c) => c.k === metric);
+    if (inBase) return BASE_COLS;
+    const spec = METRIC_COL_SPEC[metric];
+    if (!spec) return BASE_COLS;
+    const injected: Col = {
+      k: metric,
+      label: spec.label,
+      mono: true,
+      w: spec.w ?? "w-16",
+      fmt: spec.fmt,
+    };
+    // Insert after LGA (index 1).
+    return [...BASE_COLS.slice(0, 2), injected, ...BASE_COLS.slice(2)];
+  }, [metric]);
+
   const downloadCsv = () => {
-    const headers = [
+    // Always-included columns + the current sort metric (if not already in
+    // the fixed set). Keeps the CSV self-describing about the sort.
+    const baseHeaders = [
       "h3",
       "lga",
       "suitability_score",
@@ -63,6 +110,9 @@ export function RankedTable() {
       "parcel_area_median_ha",
       "excluded",
     ];
+    const headers = baseHeaders.includes(metric)
+      ? baseHeaders
+      : [...baseHeaders, metric];
     const lines = [
       headers.join(","),
       ...top.map((r) =>
@@ -80,7 +130,7 @@ export function RankedTable() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "top_cells.csv";
+    a.download = `top_cells_by_${metric}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -99,17 +149,29 @@ export function RankedTable() {
         <table className="min-w-full text-xs">
           <thead className="sticky top-0 bg-neutral-900/95 backdrop-blur">
             <tr>
-              {COLS.map((c) => (
-                <th
-                  key={c.k}
-                  className={cn(
-                    "px-2 py-1.5 text-left font-medium text-panel-muted uppercase tracking-wider text-[10px]",
-                    c.w,
-                  )}
-                >
-                  {c.label}
-                </th>
-              ))}
+              {cols.map((c) => {
+                const isSorted = c.k === metric;
+                return (
+                  <th
+                    key={c.k}
+                    className={cn(
+                      "px-2 py-1.5 text-left font-medium uppercase tracking-wider text-[10px]",
+                      c.w,
+                      isSorted
+                        ? "text-emerald-200 border-b border-emerald-400/60"
+                        : "text-panel-muted",
+                    )}
+                    title={isSorted ? "Sorted by this column" : undefined}
+                  >
+                    {c.label}
+                    {isSorted && (
+                      <span className="ml-0.5 text-emerald-400">
+                        {HIGH_IS_BAD.has(metric) ? " ↑" : " ↓"}
+                      </span>
+                    )}
+                  </th>
+                );
+              })}
             </tr>
           </thead>
           <tbody>
@@ -122,7 +184,7 @@ export function RankedTable() {
                   r.h3 === selectedH3 && "bg-emerald-500/10",
                 )}
               >
-                {COLS.map((c) => {
+                {cols.map((c) => {
                   const v = (r as unknown as Record<string, unknown>)[c.k];
                   let text = "—";
                   if (v != null) {
@@ -131,10 +193,15 @@ export function RankedTable() {
                         ? v.toFixed(c.fmt)
                         : String(v);
                   }
+                  const isSorted = c.k === metric;
                   return (
                     <td
                       key={c.k}
-                      className={cn("px-2 py-1", c.mono && "font-mono")}
+                      className={cn(
+                        "px-2 py-1",
+                        c.mono && "font-mono",
+                        isSorted && "bg-emerald-500/5 text-emerald-100",
+                      )}
                       title={text}
                     >
                       {text}

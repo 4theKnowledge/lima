@@ -25,7 +25,14 @@ export type Metric =
   | "dist_sealed_road_km"
   | "dbca_estate_frac"
   | "gsr_mean_mm"
-  | "gsr_trend";
+  | "gsr_trend"
+  | "summer_max_temp_c"
+  | "winter_min_temp_c"
+  | "evap_annual_mm"
+  | "solar_annual_mj"
+  | "vp_annual_hpa"
+  | "summer_max_trend_c_per_decade"
+  | "winter_min_trend_c_per_decade";
 
 export const METRIC_OPTIONS: { value: Metric; label: string }[] = [
   { value: "suitability_score", label: "★ Suitability score" },
@@ -41,10 +48,26 @@ export const METRIC_OPTIONS: { value: Metric; label: string }[] = [
   { value: "dbca_estate_frac", label: "DBCA estate: area fraction" },
   { value: "gsr_mean_mm", label: "Rainfall: May-Oct mean (mm)" },
   { value: "gsr_trend", label: "Rainfall trend since 1970 (mm/decade)" },
+  { value: "summer_max_temp_c", label: "Summer max temp (°C, Dec-Feb)" },
+  { value: "winter_min_temp_c", label: "Winter min temp (°C, Jun-Aug)" },
+  { value: "evap_annual_mm", label: "Annual evaporation (mm)" },
+  { value: "solar_annual_mj", label: "Solar radiation (MJ/m²/day)" },
+  { value: "vp_annual_hpa", label: "Vapour pressure (hPa)" },
+  { value: "summer_max_trend_c_per_decade", label: "Summer max trend since 1970 (°C/decade)" },
+  { value: "winter_min_trend_c_per_decade", label: "Winter min trend since 1970 (°C/decade)" },
 ];
 
-// Metrics where high value = worse; ramp inverted. Mirrors HIGH_IS_BAD in
-// app/streamlit_app.py so behaviour matches operator expectations.
+// Metrics where high value = worse; ramp inverted so purple always reads
+// as "worse". For the SILO climate metrics:
+//   summer_max_temp_c              — HIGH is worse (heat stress)
+//   winter_min_temp_c              — LOW is worse (frost / heating) — NOT inverted
+//   evap_annual_mm                 — HIGH is worse (aridity)
+//   solar / vp                     — interpretation depends on Purpose; uncoloured
+//   summer_max_trend_c_per_decade  — HIGH (rising) is worse (warming)
+//   winter_min_trend_c_per_decade  — ambivalent (higher = fewer frosts /
+//                                    for hobby+citrus that's good; also a
+//                                    warming signal). Leave OUT of HIGH_IS_BAD;
+//                                    operator interprets via Purpose.
 export const HIGH_IS_BAD: Set<Metric> = new Set<Metric>([
   "capability_class",
   "salinity_idx",
@@ -52,6 +75,9 @@ export const HIGH_IS_BAD: Set<Metric> = new Set<Metric>([
   "dist_townsite_km",
   "dist_sealed_road_km",
   "dbca_estate_frac",
+  "summer_max_temp_c",
+  "evap_annual_mm",
+  "summer_max_trend_c_per_decade",
 ]);
 
 export const CATEGORICAL_METRICS: Set<Metric> = new Set<Metric>([

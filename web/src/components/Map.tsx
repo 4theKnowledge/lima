@@ -27,11 +27,13 @@ import {
   CATEGORICAL_METRICS,
   HIGH_IS_BAD,
   useUi,
+  type Metric,
 } from "../store";
 import { applyLiveScoring } from "../lib/score";
 import { categorical, dim, gradient } from "../lib/color";
 import { formatArea, useSettings } from "../settings";
 import { useMedia } from "../lib/useMedia";
+import { METRIC_VALUE } from "../lib/metricValue";
 import type { HexCell } from "../types";
 
 const INITIAL_VIEW = {
@@ -376,6 +378,7 @@ export function MapView() {
           y={hover.y}
           cell={hover.cell}
           panelOpen={panelOpen}
+          metric={metric}
         />
       )}
     </div>
@@ -387,11 +390,13 @@ function HoverCard({
   y,
   cell,
   panelOpen,
+  metric,
 }: {
   x: number;
   y: number;
   cell: HexCell;
   panelOpen: boolean;
+  metric: Metric;
 }) {
   const HOVER_W = 260;
   const HOVER_H = 130;
@@ -449,18 +454,35 @@ function HoverCard({
     top = Math.max(12, Math.min(brTop - HOVER_H - 8, y - HOVER_H - 14));
   }
 
+  // Lead with the metric currently driving the map's colour so the tooltip
+  // matches what the operator's eyes are already tracking. Suitability +
+  // parcels stay below as fixed orientation context — but hide any of those
+  // if they're already the leading metric to avoid a duplicate row.
+  const spec = METRIC_VALUE[metric];
+  const metricValue = spec.format(cell);
+  const showSuitBelow = metric !== "suitability_score";
+  const showParcelsBelow = metric !== "parcel_count";
+  const showMedianBelow = metric !== "parcel_area_median_ha";
+
   return (
     <div
       className="pointer-events-none absolute z-30 panel px-3 py-2 text-xs leading-relaxed"
       style={{ left, top, width: HOVER_W }}
     >
-      <Row label="Suitability" value={fmt(cell.suitability_score, 3)} />
+      <Row label={spec.label} value={metricValue} accent />
       <Row label="LGA" value={cell.lga ?? "—"} />
-      <Row label="Parcels" value={cell.parcel_count?.toString() ?? "—"} />
-      <Row
-        label="Median area"
-        value={formatArea(cell.parcel_area_median_ha, 2)}
-      />
+      {showSuitBelow && (
+        <Row label="Suitability" value={fmt(cell.suitability_score, 3)} />
+      )}
+      {showParcelsBelow && (
+        <Row label="Parcels" value={cell.parcel_count?.toString() ?? "—"} />
+      )}
+      {showMedianBelow && (
+        <Row
+          label="Median area"
+          value={formatArea(cell.parcel_area_median_ha, 2)}
+        />
+      )}
       {cell.excluded && (
         <div className="mt-1 text-amber-300">
           Excluded: {cell.exclusion_reasons?.join(", ") ?? "—"}
@@ -471,11 +493,27 @@ function HoverCard({
   );
 }
 
-function Row({ label, value }: { label: string; value: string }) {
+function Row({
+  label,
+  value,
+  accent = false,
+}: {
+  label: string;
+  value: string;
+  accent?: boolean;
+}) {
   return (
-    <div className="flex justify-between gap-4">
-      <span className="text-panel-muted">{label}</span>
-      <span className="font-mono">{value}</span>
+    <div
+      className={
+        accent
+          ? "flex justify-between gap-4 text-emerald-200"
+          : "flex justify-between gap-4"
+      }
+    >
+      <span className={accent ? "" : "text-panel-muted"}>{label}</span>
+      <span className={accent ? "font-mono font-semibold" : "font-mono"}>
+        {value}
+      </span>
     </div>
   );
 }

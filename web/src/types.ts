@@ -29,6 +29,13 @@ export type HexCell = {
   dbca_estate_frac: number | null;
   gsr_mean_mm: number | null;
   gsr_trend: number | null;
+  summer_max_temp_c: number | null;
+  winter_min_temp_c: number | null;
+  evap_annual_mm: number | null;
+  solar_annual_mj: number | null;
+  vp_annual_hpa: number | null;
+  summer_max_trend_c_per_decade: number | null;
+  winter_min_trend_c_per_decade: number | null;
 };
 
 export type HexDetail = HexCell & {
@@ -76,6 +83,8 @@ export type Exclusions = {
   capability_class_at_or_above: number | null;
   salinity_idx_at_or_above: number | null;
   dbca_estate_frac_above: number | null;
+  summer_max_temp_c_above: number | null;
+  winter_min_temp_c_below: number | null;
 };
 
 export type Sensitivity = {
