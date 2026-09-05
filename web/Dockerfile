@@ -1,13 +1,6 @@
 # Web service: Vite build → Caddy static serve.
-#
-# VITE_API_BASE_URL and VITE_APP_PASSCODE_REQUIRED are baked in at build
-# time (Vite substitutes them into the bundle). Set both as Railway build
-# args / env vars on the web service.
 
 # ---- build stage ----
-# node:22 needed because corepack pulls the latest pnpm (11.x+) which
-# requires Node >= 22.13. node:20 fails with ERR_UNKNOWN_BUILTIN_MODULE
-# node:sqlite. If you pin an older pnpm via packageManager, node:20 is fine.
 FROM node:22-alpine AS build
 
 RUN corepack enable
@@ -18,6 +11,9 @@ RUN pnpm install --frozen-lockfile
 
 COPY . .
 
+# Vite reads env vars at build time. Railway passes service env vars through
+# to the Docker build context automatically, so these are picked up without
+# needing ARG/--build-arg wiring.
 ARG VITE_API_BASE_URL
 ARG VITE_APP_PASSCODE_REQUIRED=true
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
@@ -29,13 +25,6 @@ RUN pnpm build
 FROM caddy:2-alpine
 
 COPY --from=build /app/dist /usr/share/caddy
+COPY Caddyfile /etc/caddy/Caddyfile
 
-# SPA rewrite: unknown paths fall back to index.html so client-side routes
-# survive a page refresh. Listens on $PORT (Railway) or 80 locally.
-RUN printf '%s\n' \
-    ':{$PORT:80} {' \
-    '  root * /usr/share/caddy' \
-    '  encode gzip' \
-    '  try_files {path} /index.html' \
-    '  file_server' \
-    '}' > /etc/caddy/Caddyfile
+# Caddy reads $PORT from Railway's runtime env via the Caddyfile.
