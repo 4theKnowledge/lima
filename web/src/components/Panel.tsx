@@ -8,7 +8,7 @@
  * matching the original floating aesthetic.
  */
 
-import { useEffect, useRef, type PropsWithChildren, type ReactNode } from "react";
+import type { PropsWithChildren, ReactNode } from "react";
 
 import { useUi, type Tab } from "../store";
 import { cn } from "../lib/cn";
@@ -178,28 +178,6 @@ function MobileSheet({
   const selectedH3 = useUi((s) => s.selectedH3);
   const compareH3 = useUi((s) => s.compareH3);
   const fullHeight = open && !!selectedH3;
-
-  // Publish the collapsed sheet's live height as a CSS var so the mobile
-  // FAB (and any other bottom-edge overlays) can dock cleanly above it.
-  // ResizeObserver picks up changes when the selection toggles the peek
-  // strip between "Open" button and the taller SelectionHeader.
-  const sheetRef = useRef<HTMLElement | null>(null);
-  useEffect(() => {
-    const el = sheetRef.current;
-    if (!el || open) {
-      // When the sheet is open (short mode), the FAB is hidden anyway
-      // via panelOpen. When full-height, likewise. Only track peek.
-      return;
-    }
-    const publish = () => {
-      const h = el.getBoundingClientRect().height;
-      document.documentElement.style.setProperty("--sheet-peek-h", `${h}px`);
-    };
-    publish();
-    const ro = new ResizeObserver(publish);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [open, selectedH3]);
 
   return (
     <>

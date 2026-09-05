@@ -1,17 +1,19 @@
 /**
- * Slim brand chip in the top-left. No panel toggles here anymore — those
- * live in the tab bar / collapsed rail on the right so the toolbar never
- * competes with the panel for space.
+ * Top-left HUD row.
  *
- * On mobile, when a hex is selected, we render an adjacent "Clear" chip
- * so the operator can drop the selection without opening the sheet. It
- * lives inside this same flex row so heights and spacing stay in sync
- * automatically — no magic offsets.
+ * Always: brand chip with hex count.
+ * On mobile only: "Clear" chip (when a hex is selected) + a compact
+ * icon-button chip cluster for map actions (home / screenshot / refresh)
+ * — sits in the SAME flex row as the brand chip so heights/spacing stay
+ * in sync automatically. Zoom is intentionally omitted on mobile since
+ * pinch-zoom is native.
  */
 
 import { useHealth, useHex } from "../hooks";
 import { useUi } from "../store";
 import { useMedia } from "../lib/useMedia";
+import { useMapActions } from "./MapControls";
+import { cn } from "../lib/cn";
 
 export function Toolbar() {
   const { data: health } = useHealth();
@@ -19,25 +21,34 @@ export function Toolbar() {
   const selectedH3 = useUi((s) => s.selectedH3);
   const selectHex = useUi((s) => s.selectHex);
   const isMobile = useMedia("(max-width: 640px)");
+  const { actions } = useMapActions();
+  const mobileActions = actions.filter((a) => !a.mobileHidden);
 
   return (
-    <div className="absolute top-4 left-4 z-20 flex items-stretch gap-2">
-      <div className="panel px-3 py-2 flex items-center gap-2.5">
-        <div className="text-emerald-400 text-lg leading-none">◈</div>
-        <div className="leading-tight">
-          {/* Full brand + hex count on wide screens; below 480px we drop the
-              title line and keep the hex count so the map has more room but
-              the operator still sees "how much am I looking at". */}
-          <div className="text-sm font-medium hidden xs:block">Lima</div>
-          <div className="text-[10px] text-panel-muted mt-0.5">
-            {rows
-              ? `${rows.length.toLocaleString()} hex cells shown`
-              : health
-                ? `${health.hex_count.toLocaleString()} total`
-                : "loading…"}
+    <div className="absolute top-4 left-4 right-4 z-20 flex items-stretch gap-2">
+      {/* Mobile brand chip: just "◈ Lima". Hex-count metadata is a
+          desktop nicety — on mobile the horizontal space is worth more
+          than the count. */}
+      {isMobile ? (
+        <div className="panel px-3 flex items-center gap-2">
+          <div className="text-emerald-400 text-lg leading-none">◈</div>
+          <div className="text-sm font-medium">Lima</div>
+        </div>
+      ) : (
+        <div className="panel px-3 py-2 flex items-center gap-2.5">
+          <div className="text-emerald-400 text-lg leading-none">◈</div>
+          <div className="leading-tight">
+            <div className="text-sm font-medium">Lima</div>
+            <div className="text-[10px] text-panel-muted mt-0.5">
+              {rows
+                ? `${rows.length.toLocaleString()} hex cells shown`
+                : health
+                  ? `${health.hex_count.toLocaleString()} total`
+                  : "loading…"}
+            </div>
           </div>
         </div>
-      </div>
+      )}
       {isMobile && selectedH3 && (
         <button
           onClick={() => selectHex(null)}
@@ -59,6 +70,29 @@ export function Toolbar() {
           </svg>
           <span>Clear</span>
         </button>
+      )}
+      {/* Map action chips — home / screenshot / refresh. Docked to the
+          right of the row via ml-auto so they hug the right edge and
+          don't jitter as the brand chip's hex count changes width. */}
+      {isMobile && (
+        <div className="panel ml-auto flex items-center gap-0.5 p-1">
+          {mobileActions.map((a) => (
+            <button
+              key={a.id}
+              onClick={a.onClick}
+              aria-label={a.aria}
+              title={a.title}
+              className={cn(
+                "h-9 w-9 rounded-md flex items-center justify-center transition",
+                a.highlight
+                  ? "text-amber-300 bg-amber-500/15 active:bg-amber-500/25"
+                  : "text-panel-fg active:bg-white/10",
+              )}
+            >
+              {a.icon}
+            </button>
+          ))}
+        </div>
       )}
     </div>
   );
