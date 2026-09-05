@@ -4,6 +4,7 @@ import { useHex } from "../hooks";
 import { applyLiveScoring } from "../lib/score";
 import { HIGH_IS_BAD, METRIC_OPTIONS, useUi, type Metric } from "../store";
 import { cn } from "../lib/cn";
+import { useMedia } from "../lib/useMedia";
 
 type Col = {
   k: string;
@@ -58,6 +59,7 @@ export function RankedTable() {
   const weights = useUi((s) => s.weights);
   const selectHex = useUi((s) => s.selectHex);
   const selectedH3 = useUi((s) => s.selectedH3);
+  const isMobile = useMedia("(max-width: 640px)");
 
   const top = useMemo(() => {
     if (!rows) return [];
@@ -146,6 +148,61 @@ export function RankedTable() {
           Download CSV
         </button>
       </div>
+      {isMobile ? (
+        <div className="flex-1 overflow-auto rounded-md border border-white/5 divide-y divide-white/5">
+          {top.map((r, i) => {
+            const sortedVal = r[metric];
+            const sortedText =
+              sortedVal == null
+                ? "—"
+                : typeof sortedVal === "number"
+                  ? sortedVal.toFixed(
+                      METRIC_COL_SPEC[metric]?.fmt ??
+                        (metric === "suitability_score" ? 3 : 2),
+                    )
+                  : String(sortedVal);
+            const suit = r.suitability_score;
+            const isSuit = metric === "suitability_score";
+            return (
+              <button
+                key={r.h3}
+                onClick={() => selectHex(r.h3)}
+                className={cn(
+                  "w-full text-left px-3 py-2.5 flex items-center gap-3 transition",
+                  r.h3 === selectedH3
+                    ? "bg-emerald-500/10"
+                    : "active:bg-white/5",
+                )}
+              >
+                <div className="w-6 text-panel-muted font-mono text-[11px] tabular-nums shrink-0">
+                  {i + 1}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm text-panel-fg truncate">
+                    {r.lga ?? "—"}
+                  </div>
+                  <div className="text-[10px] text-panel-muted font-mono truncate">
+                    {r.h3}
+                  </div>
+                </div>
+                <div className="shrink-0 text-right">
+                  <div className="text-[10px] uppercase tracking-wider text-panel-muted leading-tight">
+                    {isSuit ? "Suit" : metricLabel.split(":")[0].slice(0, 12)}
+                  </div>
+                  <div className="text-sm font-mono font-semibold text-emerald-200 tabular-nums leading-tight">
+                    {sortedText}
+                  </div>
+                  {!isSuit && suit != null && (
+                    <div className="text-[10px] text-panel-muted font-mono tabular-nums">
+                      suit {suit.toFixed(2)}
+                    </div>
+                  )}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      ) : (
       <div className="flex-1 overflow-auto rounded-md border border-white/5">
         <table className="min-w-full text-xs">
           <thead className="sticky top-0 bg-neutral-900/95 backdrop-blur">
@@ -214,6 +271,7 @@ export function RankedTable() {
           </tbody>
         </table>
       </div>
+      )}
     </div>
   );
 }

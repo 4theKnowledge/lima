@@ -15,6 +15,7 @@ import { liveScore } from "../lib/score";
 import { InfoTip } from "./InfoTip";
 import { INSPECTOR_TIP, INSPECTOR_TIP_SOURCE } from "../lib/copy";
 import { cn } from "../lib/cn";
+import { useMedia } from "../lib/useMedia";
 import {
   areaHelpTip,
   areaTooltip,
@@ -32,14 +33,28 @@ export function Inspector() {
   const { data: cellA, isLoading: loadingA } = useHexDetail(selectedH3);
   const { data: cellB } = useHexDetail(compareH3);
   const { data: parcelsA } = useParcelSummary(selectedH3);
+  const isTouch = useMedia("(pointer: coarse)");
 
   if (!selectedH3) {
     return (
       <div className="text-xs text-panel-muted leading-relaxed">
-        Click a hex to inspect. Or search a place from the left panel.
+        {isTouch
+          ? "Tap a hex to inspect. Or search a place from the Controls tab."
+          : "Click a hex to inspect. Or search a place from the left panel."}
         <div className="mt-2">
-          Tip: <span className="font-mono text-panel-fg">shift+click</span>{" "}
-          another hex to compare two cells side by side.
+          Tip:{" "}
+          {isTouch ? (
+            <>
+              tap <span className="font-mono text-panel-fg">Compare</span> on
+              the selected chip, then tap another hex to see two cells side by
+              side.
+            </>
+          ) : (
+            <>
+              <span className="font-mono text-panel-fg">shift+click</span>{" "}
+              another hex to compare two cells side by side.
+            </>
+          )}
         </div>
       </div>
     );

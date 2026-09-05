@@ -81,6 +81,10 @@ export function MapView() {
   // useApplyTheme wrote to <html data-theme>. Kept in-component so the map
   // swaps immediately when Settings changes theme (no reload needed).
   const prefersLight = useMedia("(prefers-color-scheme: light)");
+  // Touch devices don't have hover — the deck.gl "hover" event fires on the
+  // tap that also triggers select, so the card would sit under the finger
+  // and duplicate the inspector. Suppress on coarse pointers.
+  const isTouch = useMedia("(pointer: coarse)");
   const isDark =
     theme === "dark" || (theme === "auto" && !prefersLight);
   const basemapStyle = isDark ? BASEMAP_STYLE_DARK : BASEMAP_STYLE_LIGHT;
@@ -202,6 +206,7 @@ export function MapView() {
         selectHex(c.h3 === selectedH3 ? null : c.h3);
       },
       onHover: (info: PickingInfo) => {
+        if (isTouch) return;
         const c = info.object as HexCell | undefined;
         if (c) setHover({ x: info.x, y: info.y, cell: c });
         else setHover(null);
@@ -269,6 +274,7 @@ export function MapView() {
     selectHex,
     toggleCompare,
     palette,
+    isTouch,
   ]);
 
   // Fly to a searched cell's centroid when one is set. Because DeckGL owns
@@ -372,7 +378,7 @@ export function MapView() {
           preserveDrawingBuffer
         />
       </DeckGL>
-      {hover && (
+      {hover && !isTouch && (
         <HoverCard
           x={hover.x}
           y={hover.y}

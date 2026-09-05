@@ -188,16 +188,17 @@ function MobileSheet({
         )}
         style={{
           height: open ? "min(75vh, 640px)" : "auto",
+          paddingBottom: "env(safe-area-inset-bottom)",
         }}
       >
-        {/* Grabber + tabs. Tapping the grabber toggles; tapping a tab both
-            switches and opens. */}
+        {/* Explicit open/close toggle. Full-width text button so the
+            affordance is unambiguous — no gesture, no icon-guessing. */}
         <button
-          className="w-full flex items-center justify-center py-1.5"
+          className="w-full py-2.5 text-xs font-medium uppercase tracking-wider text-panel-muted active:bg-white/5 transition"
           onClick={() => (open ? onClose() : onOpen())}
-          aria-label={open ? "Collapse panel" : "Expand panel"}
+          aria-expanded={open}
         >
-          <span className="block h-1 w-10 rounded-full bg-white/25" />
+          {open ? "Close" : "Open"}
         </button>
         <header className="flex items-stretch border-b border-white/5 shrink-0">
           {/* Icon-only tabs on mobile: each tab takes an equal share of the
@@ -231,16 +232,6 @@ function MobileSheet({
               );
             })}
           </div>
-          {open && (
-            <button
-              className="px-3 text-panel-muted hover:text-panel-fg text-sm border-l border-white/5"
-              onClick={onClose}
-              aria-label="Collapse panel"
-              title="Collapse"
-            >
-              ⌄
-            </button>
-          )}
         </header>
         {/* Body only rendered when open — keeps the peek strip tight and
             saves a bit of layout work while collapsed. */}

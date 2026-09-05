@@ -46,11 +46,11 @@ export function SelectedChip() {
         )}
       >
         <div className="min-w-0 flex-1">
-          <div className="text-[10px] uppercase tracking-wider text-panel-muted leading-tight truncate">
-            {compareArmed ? "Tap hex for B" : cell?.lga ?? "Selected"}
+          <div className="text-[10px] uppercase tracking-wider text-panel-muted leading-tight">
+            {compareArmed ? "Tap hex for B" : "Selected"}
           </div>
-          <div className="text-[10px] text-panel-muted font-mono truncate leading-tight">
-            {selectedH3}
+          <div className="text-xs font-medium text-panel-fg truncate leading-tight">
+            {cell?.lga ?? "…"}
           </div>
         </div>
         <div className="shrink-0 text-right">
@@ -67,6 +67,17 @@ export function SelectedChip() {
           </div>
         </div>
         <div className="flex items-center gap-0.5 shrink-0">
+          <ChipButton
+            onClick={armCompare}
+            label={compareArmed ? "Cancel compare" : "Compare with another cell"}
+            title={compareArmed ? "Cancel compare" : "Compare"}
+            active={compareArmed || !!compareH3}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="7" width="10" height="10" rx="1.5" />
+              <rect x="11" y="3" width="10" height="10" rx="1.5" />
+            </svg>
+          </ChipButton>
           <ChipButton
             onClick={() => setActiveTab("inspector")}
             label="Open inspector"

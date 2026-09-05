@@ -36,7 +36,7 @@ export function SearchBox() {
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Boyup Brook, 285 Blackwood Rd..."
-          className="flex-1 bg-white/5 border border-white/10 rounded-md px-2.5 py-1.5 text-xs placeholder:text-panel-muted focus:outline-none focus:border-emerald-400/40"
+          className="flex-1 bg-white/5 border border-white/10 rounded-md px-2.5 py-1.5 text-xs [@media(pointer:coarse)]:text-base placeholder:text-panel-muted focus:outline-none focus:border-emerald-400/40"
         />
         <button className="hud-button-primary" type="submit" disabled={mut.isPending}>
           {mut.isPending ? "…" : "Go"}

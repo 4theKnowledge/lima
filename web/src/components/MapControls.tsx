@@ -16,6 +16,11 @@ import { captureMapScreenshot } from "../lib/screenshot";
 import { refreshNow } from "../lib/freshness";
 import { cn } from "../lib/cn";
 
+// Height of the collapsed mobile bottom sheet (Open button + tab row +
+// border). Shared so MapControls floats above it without a drifting magic
+// number.
+export const MOBILE_PEEK_HEIGHT = 88;
+
 const SHORTCUTS: { keys: string; desc: string }[] = [
   { keys: "click", desc: "Select a hex cell" },
   { keys: "shift + click", desc: "Pin as B for compare" },
@@ -52,8 +57,8 @@ export function MapControls() {
     }
   }
   // On mobile the bottom sheet lives at the bottom edge — controls must
-  // float above it. Peek height ≈ 78px; expanded ≈ 75vh. When expanded we
-  // just hide the cluster to keep the map tap area clean.
+  // float above it. When expanded we just hide the cluster to keep the
+  // map tap area clean.
   const mobileHidden = isMobile && panelOpen;
 
   // Keyboard shortcuts. Ignored while typing in an input/textarea so we
@@ -80,7 +85,7 @@ export function MapControls() {
   return (
     <div
       className="absolute right-4 z-20 flex flex-col items-end gap-2 transition-[bottom] duration-200"
-      style={{ bottom: isMobile ? 88 : 16 }}
+      style={{ bottom: isMobile ? MOBILE_PEEK_HEIGHT + 12 : 16 }}
     >
       {helpOpen && (
         <div className="panel px-3 py-2.5 w-64 text-xs space-y-1.5">
@@ -202,7 +207,9 @@ function ControlButton({
       title={title}
       aria-label={aria}
       className={cn(
-        "h-8 w-8 rounded-md flex items-center justify-center transition",
+        // 32px on desktop; 44px on coarse pointers to hit HIG touch target.
+        "h-8 w-8 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:w-11",
+        "rounded-md flex items-center justify-center transition",
         highlight
           ? "text-amber-300 bg-amber-500/15 hover:bg-amber-500/25"
           : "text-panel-fg hover:text-emerald-300 hover:bg-white/10",

@@ -20,6 +20,7 @@ import { useHealth } from "../hooks";
 import { InfoTip } from "./InfoTip";
 import { gradientCss } from "../lib/color";
 import { cn } from "../lib/cn";
+import { useMedia } from "../lib/useMedia";
 
 // Baked in at build time by the Dockerfile ARG. Undefined in dev unless
 // you set VITE_BUILD_ID explicitly (fine — the row just shows "dev").
@@ -28,6 +29,7 @@ const FRONTEND_BUILD_ID: string | null =
 
 export function SettingsPanel() {
   const settings = useSettings();
+  const isTouch = useMedia("(pointer: coarse)");
   return (
     <div className="space-y-5">
       <section>
@@ -95,16 +97,18 @@ export function SettingsPanel() {
         </div>
       </section>
 
-      <section>
-        <SectionLabel label="Shortcuts" />
-        <div className="rounded-md border border-white/5 divide-y divide-white/5 text-xs">
-          <Shortcut keys="click" description="Select a hex cell" />
-          <Shortcut keys="shift + click" description="Pin as B for compare" />
-          <Shortcut keys="click again" description="Deselect the current hex" />
-          <Shortcut keys="esc" description="Clear selection" />
-          <Shortcut keys="h" description="Reset view (fit to data)" />
-        </div>
-      </section>
+      {!isTouch && (
+        <section>
+          <SectionLabel label="Shortcuts" />
+          <div className="rounded-md border border-white/5 divide-y divide-white/5 text-xs">
+            <Shortcut keys="click" description="Select a hex cell" />
+            <Shortcut keys="shift + click" description="Pin as B for compare" />
+            <Shortcut keys="click again" description="Deselect the current hex" />
+            <Shortcut keys="esc" description="Clear selection" />
+            <Shortcut keys="h" description="Reset view (fit to data)" />
+          </div>
+        </section>
+      )}
 
       <section>
         <SectionLabel
