@@ -1,15 +1,6 @@
-# SPA fallback: unknown paths serve index.html so React Router client-side
-# routes survive page refresh. Hardcoded to 8080 — Railway's target-port
-# auto-detection expects the container to bind a listener; hardcoding
-# removes ambiguity from $PORT substitution inside Caddyfile.
-{
-	auto_https off
-	admin off
-}
+:8080
 
-:8080 {
-	root * /usr/share/caddy
-	encode gzip
-	try_files {path} /index.html
-	file_server
-}
+root * /usr/share/caddy
+encode gzip
+try_files {path} /index.html
+file_server
