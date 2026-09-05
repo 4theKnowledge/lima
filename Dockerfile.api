@@ -26,6 +26,11 @@ COPY ingest/settings.py ./ingest/settings.py
 # it locally before deploying.
 COPY db/land_read.duckdb ./db/land_read.duckdb
 
+# Pre-install DuckDB extensions into the image so the read-only runtime
+# connection can LOAD them without needing to INSTALL. INSTALL requires a
+# writable connection, which we don't have at runtime.
+RUN uv run --no-sync python -c "import duckdb; con = duckdb.connect(':memory:'); con.execute('INSTALL spatial'); con.execute('INSTALL h3 FROM community')"
+
 ENV PYTHONUNBUFFERED=1
 
 # Railway injects $PORT. Default to 8010 for local `docker run` testing.
