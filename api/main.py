@@ -12,17 +12,21 @@ Env vars:
                    always included.
     APP_PASSCODE   If set, every request except /health must include an
                    X-Passcode header matching this value. Unset = open.
-    SNAPSHOT_URL   If set, downloads the snapshot from this URL to
-                   /tmp/land_read.duckdb at container startup. Used in
-                   production so the image doesn't need to bake in a
-                   139 MB DB file.
+
+    Bucket-linked S3 vars (auto-provided by Railway when a bucket is linked
+    to this service). All four must be present to trigger snapshot download
+    from the bucket:
+        AWS_ENDPOINT_URL         e.g. https://storage.railway.app
+        AWS_ACCESS_KEY_ID
+        AWS_SECRET_ACCESS_KEY
+        AWS_S3_BUCKET_NAME       Railway-assigned bucket ID (not friendly name)
+    Optional:
+        SNAPSHOT_KEY             Object key in the bucket. Default: "land_read.duckdb"
 """
 
 from __future__ import annotations
 
 import os
-import shutil
-import urllib.request
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -36,15 +40,34 @@ from api.routes import router
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    url = os.getenv("SNAPSHOT_URL", "").strip()
     dest = Path("/tmp/land_read.duckdb")
-    if url and not dest.exists():
-        print(f"[startup] downloading snapshot from {url}", flush=True)
-        tmp = dest.with_suffix(".tmp")
-        with urllib.request.urlopen(url) as r, tmp.open("wb") as f:
-            shutil.copyfileobj(r, f)
-        tmp.rename(dest)
-        print(f"[startup] snapshot ready at {dest} ({dest.stat().st_size} bytes)", flush=True)
+    if dest.exists():
+        yield
+        return
+
+    required = ["AWS_ENDPOINT_URL", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_S3_BUCKET_NAME"]
+    if not all(os.getenv(v) for v in required):
+        # No bucket credentials — assume local dev where the snapshot lives
+        # under db/land_read.duckdb (api/db.py handles that path fallback).
+        yield
+        return
+
+    import boto3
+
+    bucket = os.environ["AWS_S3_BUCKET_NAME"]
+    key = os.getenv("SNAPSHOT_KEY", "land_read.duckdb")
+    print(f"[startup] downloading s3://{bucket}/{key}", flush=True)
+
+    s3 = boto3.client(
+        "s3",
+        endpoint_url=os.environ["AWS_ENDPOINT_URL"],
+        aws_access_key_id=os.environ["AWS_ACCESS_KEY_ID"],
+        aws_secret_access_key=os.environ["AWS_SECRET_ACCESS_KEY"],
+    )
+    tmp = dest.with_suffix(".tmp")
+    s3.download_file(bucket, key, str(tmp))
+    tmp.rename(dest)
+    print(f"[startup] snapshot ready at {dest} ({dest.stat().st_size} bytes)", flush=True)
     yield
 
 _DEV_ORIGINS = [
