@@ -8,7 +8,7 @@
  * matching the original floating aesthetic.
  */
 
-import type { PropsWithChildren, ReactNode } from "react";
+import { useEffect, useRef, type PropsWithChildren, type ReactNode } from "react";
 
 import { useUi, type Tab } from "../store";
 import { cn } from "../lib/cn";
@@ -179,6 +179,28 @@ function MobileSheet({
   const compareH3 = useUi((s) => s.compareH3);
   const fullHeight = open && !!selectedH3;
 
+  // Publish the collapsed sheet's live height as a CSS var so the mobile
+  // FAB (and any other bottom-edge overlays) can dock cleanly above it.
+  // ResizeObserver picks up changes when the selection toggles the peek
+  // strip between "Open" button and the taller SelectionHeader.
+  const sheetRef = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    const el = sheetRef.current;
+    if (!el || open) {
+      // When the sheet is open (short mode), the FAB is hidden anyway
+      // via panelOpen. When full-height, likewise. Only track peek.
+      return;
+    }
+    const publish = () => {
+      const h = el.getBoundingClientRect().height;
+      document.documentElement.style.setProperty("--sheet-peek-h", `${h}px`);
+    };
+    publish();
+    const ro = new ResizeObserver(publish);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [open, selectedH3]);
+
   return (
     <>
       {/* Non-modal backdrop when open in short-sheet mode. Full-height
@@ -284,7 +306,7 @@ function SelectionHeader({
 }) {
   const weights = useUi((s) => s.weights);
   const compareArmed = useUi((s) => s.compareArmed);
-  const { data: cell } = useHexDetail(h3);
+  const { data: cell, isLoading } = useHexDetail(h3);
   const suit =
     cell && weights ? liveScore(cell, weights) : cell?.suitability_score;
 
@@ -299,22 +321,30 @@ function SelectionHeader({
         <div className="text-[10px] uppercase tracking-wider text-panel-muted leading-tight">
           {compareArmed ? "Tap hex for B" : "Selected"}
         </div>
-        <div className="text-sm font-medium text-panel-fg truncate leading-tight">
-          {cell?.lga ?? "…"}
-        </div>
+        {isLoading || !cell ? (
+          <div className="mt-0.5 h-4 w-32 rounded bg-white/10 animate-pulse" />
+        ) : (
+          <div className="text-sm font-medium text-panel-fg truncate leading-tight">
+            {cell.lga ?? "—"}
+          </div>
+        )}
       </div>
       <div className="shrink-0 text-right">
         <div className="text-[10px] uppercase tracking-wider text-panel-muted leading-tight">
           Suit
         </div>
-        <div
-          className={cn(
-            "text-sm font-semibold font-mono leading-none tabular-nums",
-            cell?.excluded && "text-amber-300",
-          )}
-        >
-          {cell?.excluded ? "—" : suit != null ? suit.toFixed(2) : "…"}
-        </div>
+        {isLoading || !cell ? (
+          <div className="mt-0.5 h-4 w-10 ml-auto rounded bg-white/10 animate-pulse" />
+        ) : (
+          <div
+            className={cn(
+              "text-sm font-semibold font-mono leading-none tabular-nums",
+              cell.excluded && "text-amber-300",
+            )}
+          >
+            {cell.excluded ? "—" : suit != null ? suit.toFixed(2) : "—"}
+          </div>
+        )}
       </div>
     </button>
   );

@@ -23,13 +23,14 @@ export function SelectedChip() {
   const setActiveTab = useUi((s) => s.setActiveTab);
   const selectHex = useUi((s) => s.selectHex);
   const flyToHex = useUi((s) => s.flyToHex);
-  const { data: cell } = useHexDetail(selectedH3);
+  const { data: cell, isLoading } = useHexDetail(selectedH3);
   const isMobile = useMedia("(max-width: 640px)");
 
   if (isMobile) return null;
   if (!selectedH3) return null;
 
   const suit = cell && weights ? liveScore(cell, weights) : cell?.suitability_score;
+  const pending = isLoading || !cell;
 
   return (
     <div
@@ -42,9 +43,11 @@ export function SelectedChip() {
         <div className="text-[10px] uppercase tracking-wider text-panel-muted">
           {compareArmed ? "Tap a hex for B" : "Selected"}
         </div>
-        <div className="text-xs font-medium truncate">
-          {cell?.lga ?? "…"}
-        </div>
+        {pending ? (
+          <div className="mt-1 h-3.5 w-28 rounded bg-white/10 animate-pulse" />
+        ) : (
+          <div className="text-xs font-medium truncate">{cell.lga ?? "—"}</div>
+        )}
         <div className="text-[10px] text-panel-muted font-mono truncate">
           {selectedH3}
         </div>
@@ -53,14 +56,18 @@ export function SelectedChip() {
         <div className="text-[10px] uppercase tracking-wider text-panel-muted">
           Suit
         </div>
-        <div
-          className={cn(
-            "text-lg font-semibold font-mono leading-none tabular-nums",
-            cell?.excluded && "text-amber-300",
-          )}
-        >
-          {cell?.excluded ? "—" : suit != null ? suit.toFixed(2) : "…"}
-        </div>
+        {pending ? (
+          <div className="mt-1 h-5 w-12 ml-auto rounded bg-white/10 animate-pulse" />
+        ) : (
+          <div
+            className={cn(
+              "text-lg font-semibold font-mono leading-none tabular-nums",
+              cell.excluded && "text-amber-300",
+            )}
+          >
+            {cell.excluded ? "—" : suit != null ? suit.toFixed(2) : "—"}
+          </div>
+        )}
       </div>
       <div className="flex flex-col gap-1">
         <ChipButton

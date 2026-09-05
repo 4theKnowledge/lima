@@ -276,13 +276,10 @@ function reorderForDesktop(actions: Action[]): Action[] {
 }
 
 /**
- * Radial FAB for mobile. Fan actions along a quarter arc going up-left
- * from the FAB when open. Backdrop scrim tap or FAB tap closes.
- *
- * Geometry: buttons distributed evenly on a 92px radius from the FAB
- * center, arc from ~95° (nearly straight up) to ~185° (slightly left of
- * horizontal). Angles chosen so the top action clears the sheet peek
- * and the leftmost stays inside the safe area.
+ * Mobile FAB with a vertical reveal. At rest: single circular button in
+ * the bottom-right. Tap to slide up a stacked column of action buttons
+ * directly above it. Backdrop scrim tap or FAB tap closes. Each action
+ * button is 44px wide/tall (HIG touch target) with a small gap.
  */
 function MobileFab({
   actions,
@@ -295,15 +292,8 @@ function MobileFab({
   setOpen: (v: boolean) => void;
   updateAvailable: boolean;
 }) {
-  const RADIUS = 96;
-  const START_DEG = 180; // straight left
-  const END_DEG = 270; // straight up (CSS: 270° = -90° = up)
-  const n = actions.length;
-
   return (
     <>
-      {/* Backdrop scrim — mounted only when open so the map stays
-          interactive at rest. Blurs slightly so the fan pops. */}
       {open && (
         <button
           className="fixed inset-0 z-20 bg-black/25 backdrop-blur-[1px]"
@@ -314,60 +304,66 @@ function MobileFab({
 
       <div
         className="absolute right-4 z-30"
-        style={{ bottom: MOBILE_PEEK_HEIGHT + 12 }}
+        style={{
+          // Live sheet peek height is published by Panel via a CSS var
+          // (ResizeObserver keeps it in sync as selection toggles the
+          // header). Fall back to the static estimate on first paint.
+          bottom: `calc(var(--sheet-peek-h, ${MOBILE_PEEK_HEIGHT}px) + 12px)`,
+        }}
       >
-        {/* Fan buttons. Each is absolutely positioned relative to the FAB
-            container. When closed they collapse to (0,0) and fade out —
-            the transition gives a snappy blossom effect. */}
-        {actions.map((a, i) => {
-          // Distribute evenly across the arc. When there's only one, park
-          // it at the midpoint.
-          const t = n === 1 ? 0.5 : i / (n - 1);
-          const deg = START_DEG + (END_DEG - START_DEG) * t;
-          const rad = (deg * Math.PI) / 180;
-          const dx = Math.cos(rad) * RADIUS;
-          const dy = Math.sin(rad) * RADIUS;
-          // Stagger the fade so the fan blossoms rather than snapping.
-          const delayMs = open ? i * 25 : (n - 1 - i) * 15;
-          return (
-            <button
-              key={a.id}
-              onClick={() => {
-                a.onClick();
-                setOpen(false);
-              }}
-              aria-label={a.aria}
-              title={a.title}
-              tabIndex={open ? 0 : -1}
-              className={cn(
-                "panel absolute bottom-0 right-0 h-12 w-12 rounded-full flex items-center justify-center",
-                "transition-[transform,opacity] duration-200 ease-out",
-                open ? "opacity-100" : "opacity-0 pointer-events-none",
-                a.highlight
-                  ? "text-amber-300 bg-amber-500/20 ring-1 ring-amber-400/40"
-                  : "text-panel-fg active:bg-white/10",
-              )}
-              style={{
-                transform: open
-                  ? `translate(${dx}px, ${dy}px)`
-                  : "translate(0, 0)",
-                transitionDelay: `${delayMs}ms`,
-              }}
-            >
-              {a.icon}
-            </button>
-          );
-        })}
+        {/* Action buttons: absolutely stacked above the FAB so the closed
+            state stays a single circle (no phantom layout height). Slide-up
+            + fade transition, staggered so the stack blossoms rather than
+            snapping into place. */}
+        <div
+          className={cn(
+            "absolute bottom-full right-0 mb-2 flex flex-col items-center gap-2",
+            open ? "" : "pointer-events-none",
+          )}
+        >
+          {actions.map((a, i) => {
+            // Reverse the visual stack so index 0 (Refresh) is nearest
+            // the FAB. Stagger the fade from the bottom up on open (so
+            // the most-reachable action lands first) and top down on
+            // close.
+            const rowIndex = actions.length - 1 - i;
+            const delayMs = open ? i * 30 : rowIndex * 20;
+            return (
+              <button
+                key={a.id}
+                onClick={() => {
+                  a.onClick();
+                  setOpen(false);
+                }}
+                aria-label={a.aria}
+                title={a.title}
+                tabIndex={open ? 0 : -1}
+                className={cn(
+                  "panel h-11 w-11 rounded-full flex items-center justify-center",
+                  "transition-[transform,opacity] duration-200 ease-out",
+                  open
+                    ? "opacity-100 translate-y-0"
+                    : "opacity-0 translate-y-3",
+                  a.highlight
+                    ? "text-amber-300 bg-amber-500/20 ring-1 ring-amber-400/40"
+                    : "text-panel-fg active:bg-white/10",
+                )}
+                style={{ transitionDelay: `${delayMs}ms`, order: rowIndex }}
+              >
+                {a.icon}
+              </button>
+            );
+          })}
+        </div>
 
-        {/* FAB itself. Amber ring when an update is available so the
-            alert is visible without opening the fan. Icon flips between
-            + (closed) and ✕ (open). */}
+        {/* FAB. Amber ring when a new build is available so the alert
+            shows through even at rest. Icon flips + → ✕ when open. */}
         <button
           onClick={() => setOpen(!open)}
           aria-label={open ? "Close map controls" : "Open map controls"}
           aria-expanded={open}
           className={cn(
-            "panel relative h-14 w-14 rounded-full flex items-center justify-center",
+            "panel h-14 w-14 rounded-full flex items-center justify-center",
             "transition-all duration-200 active:scale-95",
             updateAvailable && !open
               ? "text-amber-300 ring-2 ring-amber-400/50"
