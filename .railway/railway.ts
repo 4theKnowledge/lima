@@ -16,6 +16,9 @@ export default defineRailway(() => {
       // Baked into the JS bundle at build time. Set via Railway variables.
       VITE_API_BASE_URL: preserve(),
       VITE_APP_PASSCODE_REQUIRED: "true",
+      // Caddy binds to :8080 (hardcoded in web/Caddyfile). Setting PORT
+      // explicitly makes Railway's target port match.
+      PORT: "8080",
     },
   });
 
