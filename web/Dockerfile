@@ -11,14 +11,9 @@ RUN pnpm install --frozen-lockfile
 
 COPY . .
 
-# Vite reads env vars at build time. Railway passes service env vars through
-# to the Docker build context automatically, so these are picked up without
-# needing ARG/--build-arg wiring.
-ARG VITE_API_BASE_URL
-ARG VITE_APP_PASSCODE_REQUIRED=true
-ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
-ENV VITE_APP_PASSCODE_REQUIRED=$VITE_APP_PASSCODE_REQUIRED
-
+# Vite reads VITE_* env vars at build time and inlines them into the bundle.
+# Railway exposes service variables as environment variables during the
+# Docker build (not as build args), so `pnpm build` sees them directly.
 RUN pnpm build
 
 # ---- serve stage ----
