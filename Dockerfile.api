@@ -1,0 +1,32 @@
+# API service: FastAPI + baked-in DuckDB snapshot.
+#
+# The snapshot db/land_read.duckdb (~139 MB) is copied into the image at
+# build time. Refresh data = rebuild snapshot locally + railway up again.
+# The snapshot is gitignored, so use `railway up` (uploads working tree)
+# rather than GitHub-connected deploys.
+
+FROM python:3.11-slim
+
+# uv for fast, lockfile-driven installs.
+COPY --from=ghcr.io/astral-sh/uv:0.5.11 /uv /usr/local/bin/uv
+
+WORKDIR /app
+
+# Install deps first so code changes don't bust the layer cache.
+COPY pyproject.toml uv.lock ./
+RUN uv sync --frozen --no-dev --no-install-project
+
+# Copy application code.
+COPY api ./api
+COPY scoring ./scoring
+COPY db ./db
+COPY ingest/settings.py ./ingest/settings.py
+
+# Copy the pre-built read snapshot. Failure here means you forgot to build
+# it locally before deploying.
+COPY db/land_read.duckdb ./db/land_read.duckdb
+
+ENV PYTHONUNBUFFERED=1
+
+# Railway injects $PORT. Default to 8010 for local `docker run` testing.
+CMD uv run --no-sync uvicorn api.main:app --host 0.0.0.0 --port ${PORT:-8010}

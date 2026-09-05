@@ -17,7 +17,7 @@ export function Toolbar() {
             title line and keep the hex count so the map has more room but
             the operator still sees "how much am I looking at". */}
         <div className="text-sm font-medium hidden xs:block">
-          SWWA Land Screener
+          Lima
         </div>
         <div className="text-[10px] text-panel-muted mt-0.5">
           {rows

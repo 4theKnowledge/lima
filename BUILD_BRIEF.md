@@ -24,7 +24,7 @@ Two rules that override convenience:
 |---|---|
 | Store | DuckDB, single file, `spatial` + `h3` extensions |
 | Ingest | Python 3.11+, `httpx`, `geopandas`, `rioxarray`, `exactextract` |
-| UI | Streamlit + pydeck (`H3HexagonLayer`) |
+| UI | React + Vite + deck.gl (`H3HexagonLayer`) over FastAPI |
 | Inspection | QGIS pointed at the DuckDB file / exported GeoPackage |
 
 ```sql
@@ -46,7 +46,8 @@ All entry points run through `uv run`:
 - Ingest modules: `uv run python -m ingest.<source>` (e.g. `uv run python -m ingest.cadastre`)
 - Scoring: `uv run python -m scoring.score`
 - Sensitivity CLI: `uv run python -m scoring.sensitivity`
-- UI: `uv run streamlit run app/streamlit_app.py`
+- API: `uv run uvicorn api.main:app --reload --port 8010`
+- UI: `cd web && pnpm dev` (dev server on 5183, proxies `/api` to FastAPI)
 
 Keep it to `uv run` — no `activate`, no shell hooks. If a wrapper is wanted later, a
 `justfile` can front these commands, but don't add one for the MVP.
@@ -54,14 +55,15 @@ Keep it to `uv run` — no `activate`, no shell hooks. If a wrapper is wanted la
 ### Repo layout
 
 ```
-swwa-land/
+lima/
   ingest/          one module per source, each idempotent
   cache/raw/       untouched API responses, gitignored
   db/land.duckdb
   scoring/
     weights.yaml   all tunables live here, nothing hardcoded
     score.sql
-  app/streamlit_app.py
+  api/             FastAPI thin HTTP layer over DuckDB
+  web/             React + Vite + deck.gl frontend
   notes/DATA_LOG.md   append-only: what was fetched, when, row counts
 ```
 
@@ -164,7 +166,7 @@ columns on the hex table. For rainfall, derive **two** values per cell:
 - Mean growing-season rainfall (May–Oct), 1991–2020 baseline
 - Linear trend in growing-season rainfall since 1970, mm/decade
 
-The trend matters as much as the level in this region — SWWA rainfall has declined
+The trend matters as much as the level in this region — rainfall has declined
 materially since the late 1960s and the decline is projected to continue.
 
 ---
@@ -296,9 +298,10 @@ Make this a toggleable map view: suitability / price / residual.
 
 ## 7. UI
 
-Streamlit, single page. Deliberately basic — this is an inspection tool.
+React SPA served over a thin FastAPI layer. Fullscreen map + slide-out HUD.
+Deliberately focused — this is an inspection tool.
 
-**Map (pydeck `H3HexagonLayer`)**
+**Map (deck.gl `H3HexagonLayer`)**
 - Colour by: suitability | price | residual (radio toggle)
 - Excluded cells rendered in flat grey, not omitted — the operator needs to see what was
   ruled out and why
@@ -334,7 +337,7 @@ Each milestone must produce something usable on its own.
 3. **Three decisive layers:** groundwater areas, soil capability, bushfire prone. Crude
    scoring. This is already a useful tool.
 4. **Rainfall zonal stats,** level and trend.
-5. **Streamlit UI** over the single LGA.
+5. **UI** over the single LGA (originally Streamlit; now React + FastAPI).
 6. **Scale to the full division** — loop the ingest over all SWLD LGAs, run overnight,
    check the data log for gaps.
 7. **Price layer + residual view,** once sales reports are purchased.

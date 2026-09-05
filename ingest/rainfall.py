@@ -8,7 +8,7 @@ Method per BUILD_BRIEF.md §6:
   Level uses the WMO 30-year climatological baseline (1991-2020).
   Trend uses a linear regression from 1970 to the most recent full year,
   reporting slope in mm/decade. Negative = drying, which is the dominant
-  signal in SWWA since the late 1960s.
+  signal in the region since the late 1960s.
 
 Assumes rainfall NetCDFs are already present in cache/raw/rainfall/, one
 per year, named `<year>.monthly_rain.nc`. Fetch them with:

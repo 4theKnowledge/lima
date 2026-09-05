@@ -81,10 +81,10 @@ this we compute two things per hex cell:
 - **Level:** mean growing-season rainfall (May–Oct), 1991–2020 average
 - **Trend:** how fast rainfall has been declining since 1970, mm per decade
 
-Both matter for the SW. Rainfall level is obvious. The trend matters because
-SWWA has been drying since the late 1960s and models say the decline
-continues — a shire that averaged 600 mm through 1991–2020 but is trending
-down 30 mm/decade is not the same investment as one that's stable.
+Both matter for the region. Rainfall level is obvious. The trend matters
+because the region has been drying since the late 1960s and models say the
+decline continues — a shire that averaged 600 mm through 1991–2020 but is
+trending down 30 mm/decade is not the same investment as one that's stable.
 
 ### DEM (elevation) — *Landgate, 20m or coarser*
 Digital Elevation Model — height above sea level on a grid. From this we

@@ -9,7 +9,7 @@ Run:
     uv run python -m ingest.cadastre --lga "Manjimup"
 
 Per BUILD_BRIEF.md §2, geometry is stored in EPSG:7844 (GDA2020 geographic)
-and area is computed in EPSG:7850 (MGA2020 Zone 50, covers all of SWWA).
+and area is computed in EPSG:7850 (MGA2020 Zone 50, covers all of the region).
 """
 
 from __future__ import annotations
@@ -42,7 +42,7 @@ LGA_ZIP = (
 LGA_GPKG_INNER = "LGA_Boundaries_LGATE_233_WA_GDA2020_Public.gpkg"
 
 STORAGE_CRS = "EPSG:7844"   # GDA2020 geographic — what we persist
-COMPUTE_CRS = "EPSG:7850"   # MGA2020 Zone 50 — for area/distance maths in SWWA
+COMPUTE_CRS = "EPSG:7850"   # MGA2020 Zone 50 — for area/distance maths
 
 
 def _vsizip(zip_path: Path, inner: str) -> str:

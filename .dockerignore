@@ -1,0 +1,37 @@
+# Used by Dockerfile.api. IMPORTANT: db/land_read.duckdb is NOT ignored
+# here (though it is in .gitignore) — the API image needs to COPY it in.
+
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.venv/
+
+.env
+.env.local
+
+# Ingest inputs / outputs — not needed at runtime.
+cache/
+notes/
+
+# The write DB is only used by ingest; runtime reads land_read.duckdb only.
+db/land.duckdb
+db/*.duckdb.wal
+db/*.duckdb.tmp
+
+# Frontend has its own image.
+web/
+
+# Repo / editor cruft.
+.git/
+.gitignore
+.github/
+.idea/
+.vscode/
+.DS_Store
+*.log
+
+README.md
+BUILD_BRIEF.md
+TASKS.md

@@ -19,7 +19,7 @@ export type Settings = {
   palette: Palette;
 };
 
-const KEY = "swwa.settings.v1";
+const KEY = "lima.settings.v1";
 const DEFAULTS: Settings = {
   units: "metric",
   theme: "dark",

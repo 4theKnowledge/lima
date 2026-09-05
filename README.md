@@ -1,28 +1,18 @@
-# SWWA Land Screener
+# Lima
 
-Regional land-screening tool for the South West of Western Australia. Colour-scored
-H3 hex map + inspector, backed by DuckDB with `spatial` + `h3` extensions. See
-`BUILD_BRIEF.md` for the full spec and `TASKS.md` for milestones.
-
-## Two frontends
-
-The project ships two UIs against the same data:
-
-| UI | Path | When to use |
-|---|---|---|
-| React + FastAPI (M10) | `web/` + `api/` | Default going forward. Fullscreen map + slide-out HUD panels. |
-| Streamlit (M6) | `app/streamlit_app.py` | Legacy fallback until React reaches full feature parity. |
-
-Both read the same `db/land_read.duckdb` snapshot — you can run either without
-disturbing the other.
+Regional land-screening tool. Colour-scored H3 hex map + inspector, backed
+by DuckDB with `spatial` + `h3` extensions. Currently covers the South West
+of Western Australia; the architecture is region-agnostic so more regions
+can be added later. See `BUILD_BRIEF.md` for the full spec and `TASKS.md`
+for milestones.
 
 ## Prerequisites
 
 - Python 3.11+ managed by [`uv`](https://docs.astral.sh/uv/) (`uv sync` on first run)
-- Node 20+ with `pnpm` (only needed for the React frontend)
+- Node 20+ with `pnpm`
 - A populated `db/land.duckdb` from the ingest pipeline (see `TASKS.md` M0–M7)
 
-## Run the React app (default)
+## Run locally
 
 Two terminals:
 
@@ -35,18 +25,12 @@ cd web && pnpm install    # once
 cd web && pnpm dev
 ```
 
-Open http://localhost:5183/. The `/api` prefix on the frontend is proxied through
-Vite to the FastAPI port, so no CORS wrangling is needed in dev.
+Open http://localhost:5183/. The `/api` prefix is proxied through Vite to
+FastAPI, so no CORS wrangling is needed in dev.
 
-Port choices are deliberate — port 8000 is often occupied by an unrelated Python
-service on this dev machine, and 5173 is proxied by Docker Desktop. Override with
-`VITE_API_PORT=xxxx` if you need to move the backend port.
-
-## Run the Streamlit app (legacy)
-
-```sh
-uv run streamlit run app/streamlit_app.py
-```
+Port choices are deliberate — 8000 is often occupied by an unrelated Python
+service on this dev machine, and 5173 is proxied by Docker Desktop. Override
+with `VITE_API_PORT=xxxx` to move the backend port.
 
 ## Run an ingest
 
@@ -59,20 +43,27 @@ uv run python -m scoring.score
 uv run python -m scoring.sensitivity   # optional but recommended after weight changes
 ```
 
-Both UIs pick up the new snapshot on their next request — no restart needed for
-row-data changes. Schema changes (`ALTER TABLE ADD COLUMN`) still need one restart
-of whichever UI is running (see `TASKS.md` X.6).
+The frontend picks up the new snapshot on its next request — no restart
+needed for row-data changes. Schema changes (`ALTER TABLE ADD COLUMN`) need
+one restart of the API (see `TASKS.md` X.6).
 
 ## Layout
 
 ```
-swwa-land/
-  api/              FastAPI backend (M10) — thin HTTP layer over DuckDB
-  web/              React + Vite + deck.gl frontend (M10)
-  app/              Legacy Streamlit UI (M6)
+lima/
+  api/              FastAPI backend — thin HTTP layer over DuckDB
+  web/              React + Vite + deck.gl frontend
   ingest/           One module per source, each idempotent
   scoring/          Stage 1 exclude + Stage 2 weighted score
   db/               DuckDB primary + read-snapshot
   cache/            Raw API responses (gitignored)
   notes/            Data log, sensitivity log, catalogue notes
+  .railway/         Railway Infrastructure as Code
 ```
+
+## Deploy to Railway
+
+See [`notes/DEPLOY.md`](notes/DEPLOY.md) for the full deployment reference:
+architecture (web via GitHub, api via `railway up`), one-time setup, env
+vars, and the data-refresh workflow.
+

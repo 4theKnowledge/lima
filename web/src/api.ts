@@ -1,6 +1,12 @@
 /**
- * Thin fetch wrappers around the FastAPI backend. Routed through Vite's
- * dev proxy (/api → http://localhost:8000).
+ * Thin fetch wrappers around the FastAPI backend.
+ *
+ * In dev: BASE defaults to "/api", proxied by Vite to the backend port.
+ * In prod: set VITE_API_BASE_URL (build-time) to the deployed API origin.
+ *
+ * A shared passcode is read from localStorage (key "lima-passcode", set by
+ * PasscodeGate) and sent as X-Passcode on every request. A 401 triggers a
+ * clear + reload so the gate re-prompts.
  */
 
 import type {
@@ -15,10 +21,22 @@ import type {
   Weights,
 } from "./types";
 
-const BASE = "/api";
+const BASE = (import.meta.env.VITE_API_BASE_URL ?? "/api").replace(/\/$/, "");
+const PASSCODE_KEY = "lima-passcode";
+
+function authHeaders(): HeadersInit {
+  const p = localStorage.getItem(PASSCODE_KEY);
+  return p ? { "X-Passcode": p } : {};
+}
 
 async function j<T>(input: RequestInfo, init?: RequestInit): Promise<T> {
-  const r = await fetch(input, init);
+  const headers = { ...(init?.headers ?? {}), ...authHeaders() };
+  const r = await fetch(input, { ...init, headers });
+  if (r.status === 401) {
+    localStorage.removeItem(PASSCODE_KEY);
+    window.location.reload();
+    throw new Error("401");
+  }
   if (!r.ok) {
     const body = await r.text().catch(() => "");
     throw new Error(`${r.status} ${r.statusText}: ${body || "no body"}`);

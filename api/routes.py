@@ -1,4 +1,4 @@
-"""HTTP routes for the SWWA land screener.
+"""HTTP routes for Lima.
 
 Rules of engagement:
   - Read paths never mutate. Weight/exclusion PUTs re-use the existing
@@ -306,7 +306,7 @@ def geocode(q: str = Query(min_length=1)) -> GeocodeResult | None:
     r = httpx.get(
         "https://nominatim.openstreetmap.org/search",
         params={"q": q, "format": "jsonv2", "countrycodes": "au", "limit": 1},
-        headers={"User-Agent": "swwa-land-screener (personal use)"},
+        headers={"User-Agent": "lima (personal use)"},
         timeout=15.0,
     )
     r.raise_for_status()

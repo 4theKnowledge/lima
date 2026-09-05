@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.vite/
+stats.html
+
+.env
+.env.local
+.env.*.local
+
+.git/
+.DS_Store
+*.log
+
+.idea/
+.vscode/
