@@ -96,6 +96,7 @@ export type Health = {
   ok: boolean;
   snapshot_mtime: number;
   hex_count: number;
+  build_id: string | null;
 };
 
 export type DataSource = {

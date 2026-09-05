@@ -96,6 +96,10 @@ class Health(BaseModel):
     ok: bool
     snapshot_mtime: float
     hex_count: int
+    # Best-effort build identifier (git SHA or similar) so the client can
+    # detect deploys and prompt for reload. `None` when unset — treated as
+    # "unknown, don't compare".
+    build_id: str | None = None
 
 
 class DataSource(BaseModel):

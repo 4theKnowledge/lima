@@ -2,5 +2,22 @@
 
 root * /usr/share/caddy
 encode gzip
+
+# Content-hashed Vite assets (JS/CSS/images under /assets/) are immutable —
+# every build emits new filenames, so cache them forever. Without this the
+# browser re-validates every chunk on every reload.
+@assets path /assets/*
+header @assets Cache-Control "public, max-age=31536000, immutable"
+
+# The HTML shell references those hashed assets. It MUST NOT be cached
+# aggressively — otherwise a stale shell keeps pointing at old chunks even
+# after a new build. no-cache still allows a conditional GET (ETag/304),
+# so it's cheap; it just forbids serving stale.
+@html path /index.html /
+header @html Cache-Control "no-cache, must-revalidate"
+
+# Anything else (favicon, future public/ files) — safe default.
+header Cache-Control "no-cache"
+
 try_files {path} /index.html
 file_server

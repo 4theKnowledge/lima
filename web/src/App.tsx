@@ -5,6 +5,8 @@
 
 import { useHydrateFromUrl, useSyncToUrl } from "./lib/urlState";
 import { useApplyTheme } from "./lib/theme";
+import { useFreshness } from "./lib/freshness";
+import { UpdateBanner } from "./components/UpdateBanner";
 import { MapView } from "./components/Map";
 import { HudPanel, TabBody } from "./components/Panel";
 import { Toolbar } from "./components/Toolbar";
@@ -24,12 +26,14 @@ export default function App() {
   useHydrateFromUrl();
   useSyncToUrl();
   useApplyTheme();
+  useFreshness();
   return (
     <div className="relative h-full w-full overflow-hidden bg-neutral-950">
       <MapView />
       <Toolbar />
       <SelectedChip />
       <MapControls />
+      <UpdateBanner />
 
       <HudPanel>
         <TabBody tab="controls">

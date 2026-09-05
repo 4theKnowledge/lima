@@ -8,10 +8,13 @@
  */
 
 import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { useUi } from "../store";
 import { useMedia } from "../lib/useMedia";
 import { captureMapScreenshot } from "../lib/screenshot";
+import { refreshNow } from "../lib/freshness";
+import { cn } from "../lib/cn";
 
 const SHORTCUTS: { keys: string; desc: string }[] = [
   { keys: "click", desc: "Select a hex cell" },
@@ -20,14 +23,34 @@ const SHORTCUTS: { keys: string; desc: string }[] = [
   { keys: "esc", desc: "Clear selection" },
   { keys: "h", desc: "Reset view (fit to data)" },
   { keys: "+ / −", desc: "Zoom in / out" },
+  { keys: "r", desc: "Refresh data (or reload if update available)" },
 ];
 
 export function MapControls() {
   const flyToHex = useUi((s) => s.flyToHex);
   const nudgeZoom = useUi((s) => s.nudgeZoom);
   const panelOpen = useUi((s) => s.panelOpen);
+  const updateAvailable = useUi((s) => s.updateAvailable);
   const [helpOpen, setHelpOpen] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const qc = useQueryClient();
   const isMobile = useMedia("(max-width: 640px)");
+
+  // Refresh button behaviour splits on updateAvailable: fresh build → hard
+  // reload (only way to pick up new bundle chunks). Otherwise data-only
+  // refetch, keeps camera + panel state.
+  async function handleRefresh() {
+    if (updateAvailable) {
+      window.location.reload();
+      return;
+    }
+    setRefreshing(true);
+    try {
+      await refreshNow(qc);
+    } finally {
+      setRefreshing(false);
+    }
+  }
   // On mobile the bottom sheet lives at the bottom edge — controls must
   // float above it. Peek height ≈ 78px; expanded ≈ 75vh. When expanded we
   // just hide the cluster to keep the map tap area clean.
@@ -44,10 +67,14 @@ export function MapControls() {
       else if (e.key === "?") setHelpOpen((v) => !v);
       else if (e.key === "+" || e.key === "=") nudgeZoom(+1);
       else if (e.key === "-" || e.key === "_") nudgeZoom(-1);
+      else if (e.key === "r" || e.key === "R") handleRefresh();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [flyToHex, nudgeZoom]);
+    // handleRefresh depends on qc + updateAvailable but is stable enough
+    // that re-binding on every render is fine.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [flyToHex, nudgeZoom, updateAvailable]);
 
   if (mobileHidden) return null;
   return (
@@ -117,6 +144,34 @@ export function MapControls() {
           </svg>
         </ControlButton>
         <ControlButton
+          onClick={handleRefresh}
+          title={
+            updateAvailable
+              ? "New version available — click to reload"
+              : refreshing
+                ? "Refreshing…"
+                : "Refresh data (R)"
+          }
+          aria={updateAvailable ? "Reload for new version" : "Refresh data"}
+          highlight={updateAvailable}
+        >
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className={cn(refreshing && "animate-spin")}
+          >
+            <polyline points="23 4 23 10 17 10" />
+            <polyline points="1 20 1 14 7 14" />
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+          </svg>
+        </ControlButton>
+        <ControlButton
           onClick={() => setHelpOpen((v) => !v)}
           title="Shortcuts (?)"
           aria={"Show shortcuts"}
@@ -132,11 +187,13 @@ function ControlButton({
   onClick,
   title,
   aria,
+  highlight,
   children,
 }: {
   onClick: () => void;
   title: string;
   aria: string;
+  highlight?: boolean;
   children: React.ReactNode;
 }) {
   return (
@@ -144,7 +201,12 @@ function ControlButton({
       onClick={onClick}
       title={title}
       aria-label={aria}
-      className="h-8 w-8 rounded-md text-panel-fg hover:text-emerald-300 hover:bg-white/10 flex items-center justify-center transition"
+      className={cn(
+        "h-8 w-8 rounded-md flex items-center justify-center transition",
+        highlight
+          ? "text-amber-300 bg-amber-500/15 hover:bg-amber-500/25"
+          : "text-panel-fg hover:text-emerald-300 hover:bg-white/10",
+      )}
     >
       {children}
     </button>

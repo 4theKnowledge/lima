@@ -79,6 +79,15 @@ type UiState = {
   panelOpen: boolean;
   activeTab: Tab;
 
+  // Set by useFreshness when /health reports a different build_id than the
+  // one baked into the running bundle. Surfaced as a banner + the map
+  // controls' refresh button flips to "reload" mode. Never set by user
+  // action.
+  updateAvailable: boolean;
+  updateBannerDismissed: boolean;
+  setUpdateAvailable: (v: boolean) => void;
+  dismissUpdateBanner: () => void;
+
   setMetric: (m: Metric) => void;
   setWeights: (w: Weights) => void;
   setWeight: (k: keyof Weights, v: number) => void;
@@ -110,6 +119,8 @@ export const useUi = create<UiState>((set) => ({
   selectedLgas: [],
   panelOpen: true,
   activeTab: "controls",
+  updateAvailable: false,
+  updateBannerDismissed: false,
 
   setMetric: (m) => set({ metric: m }),
   setWeights: (w) => set({ weights: { ...w }, weightsDirty: false }),
@@ -164,6 +175,14 @@ export const useUi = create<UiState>((set) => ({
   setPanelOpen: (open) => set({ panelOpen: open }),
   togglePanel: () => set((s) => ({ panelOpen: !s.panelOpen })),
   setActiveTab: (t) => set({ activeTab: t, panelOpen: true }),
+  setUpdateAvailable: (v) =>
+    set((s) => ({
+      updateAvailable: v,
+      // If a fresh update was just detected, un-dismiss so the banner shows
+      // even if the user dismissed a prior one earlier in the session.
+      updateBannerDismissed: v ? false : s.updateBannerDismissed,
+    })),
+  dismissUpdateBanner: () => set({ updateBannerDismissed: true }),
 }));
 
 export function normalisedWeights(w: Weights): Weights {

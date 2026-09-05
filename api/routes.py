@@ -11,6 +11,7 @@ Rules of engagement:
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Any
 
@@ -36,6 +37,11 @@ from api.schemas import (
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 WEIGHTS_PATH = PROJECT_ROOT / "scoring" / "weights.yaml"
 SENSITIVITY_DIR = PROJECT_ROOT / "notes" / "sensitivity"
+
+# Best-effort deploy identifier. Set BUILD_ID (or fall back to Railway's
+# RAILWAY_GIT_COMMIT_SHA) in the container env; the frontend polls /health
+# and compares this value to detect deploys.
+BUILD_ID = os.getenv("BUILD_ID") or os.getenv("RAILWAY_GIT_COMMIT_SHA") or None
 
 router = APIRouter()
 
@@ -65,7 +71,12 @@ def health() -> Health:
     con = connect()
     n = con.execute("SELECT COUNT(*) FROM hex").fetchone()[0]
     con.close()
-    return Health(ok=True, snapshot_mtime=snapshot_mtime(), hex_count=n)
+    return Health(
+        ok=True,
+        snapshot_mtime=snapshot_mtime(),
+        hex_count=n,
+        build_id=BUILD_ID,
+    )
 
 
 # Per-source coverage columns. Rows-populated is "how many hex cells have a
