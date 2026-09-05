@@ -303,8 +303,14 @@ function MobileFab({
       )}
 
       <div
-        className="absolute right-4 z-30"
+        className="fixed right-4 z-30"
         style={{
+          // Fixed positioning (not absolute) so the FAB shares the visual
+          // viewport with the Panel's <aside>, which is also fixed. On
+          // iOS standalone (home-screen app) an absolute-positioned FAB
+          // inside App's <div class="h-full"> lands at a different bottom
+          // than the fixed sheet, and drifts under it.
+          //
           // Live sheet peek height is published by Panel via a CSS var
           // (ResizeObserver keeps it in sync as selection toggles the
           // header). Fall back to the static estimate on first paint.
