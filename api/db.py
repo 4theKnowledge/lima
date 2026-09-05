@@ -12,7 +12,12 @@ from pathlib import Path
 import duckdb
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-READ_DB = PROJECT_ROOT / "db" / "land_read.duckdb"
+# In production the snapshot is downloaded from SNAPSHOT_URL to /tmp at
+# startup (see api/main.py lifespan). Locally it lives in db/ from the
+# ingest pipeline. SNAPSHOT_LOCAL_PATH lets tests override.
+_LOCAL_DEFAULT = PROJECT_ROOT / "db" / "land_read.duckdb"
+_PROD_PATH = Path("/tmp/land_read.duckdb")
+READ_DB = _PROD_PATH if _PROD_PATH.exists() else _LOCAL_DEFAULT
 
 
 def connect() -> duckdb.DuckDBPyConnection:

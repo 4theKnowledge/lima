@@ -12,11 +12,19 @@ Env vars:
                    always included.
     APP_PASSCODE   If set, every request except /health must include an
                    X-Passcode header matching this value. Unset = open.
+    SNAPSHOT_URL   If set, downloads the snapshot from this URL to
+                   /tmp/land_read.duckdb at container startup. Used in
+                   production so the image doesn't need to bake in a
+                   139 MB DB file.
 """
 
 from __future__ import annotations
 
 import os
+import shutil
+import urllib.request
+from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -24,6 +32,20 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
 
 from api.routes import router
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    url = os.getenv("SNAPSHOT_URL", "").strip()
+    dest = Path("/tmp/land_read.duckdb")
+    if url and not dest.exists():
+        print(f"[startup] downloading snapshot from {url}", flush=True)
+        tmp = dest.with_suffix(".tmp")
+        with urllib.request.urlopen(url) as r, tmp.open("wb") as f:
+            shutil.copyfileobj(r, f)
+        tmp.rename(dest)
+        print(f"[startup] snapshot ready at {dest} ({dest.stat().st_size} bytes)", flush=True)
+    yield
 
 _DEV_ORIGINS = [
     "http://localhost:5183",
@@ -39,6 +61,7 @@ app = FastAPI(
     version="0.1.0",
     description="Thin HTTP layer over the DuckDB snapshot. Read-only except for "
     "weight/exclusion updates, which trigger a re-score.",
+    lifespan=lifespan,
 )
 
 app.add_middleware(GZipMiddleware, minimum_size=1024)

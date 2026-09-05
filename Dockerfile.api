@@ -22,9 +22,9 @@ COPY scoring ./scoring
 COPY db ./db
 COPY ingest/settings.py ./ingest/settings.py
 
-# Copy the pre-built read snapshot. Failure here means you forgot to build
-# it locally before deploying.
-COPY db/land_read.duckdb ./db/land_read.duckdb
+# Snapshot no longer baked in — downloaded from $SNAPSHOT_URL at container
+# startup (see api/main.py lifespan). Keeps image small and lets us deploy
+# from GitHub instead of needing `railway up`.
 
 # Pre-install DuckDB extensions into the image so the read-only runtime
 # connection can LOAD them without needing to INSTALL. INSTALL requires a
