@@ -4,9 +4,8 @@
  * Buttons: fly-to (crosshair), open inspector (arrow), compare (A/B icon),
  * clear (✕).
  *
- * Desktop-only. On mobile the selection header lives inside the bottom
- * sheet (peek strip when collapsed, above the mini-map when expanded) so
- * the map surface stays uncluttered.
+ * Desktop-only. On mobile, LGA/suit live in the bottom sheet header and a
+ * "Clear" escape chip lives inside the Toolbar row.
  */
 
 import { useHexDetail } from "../hooks";
@@ -27,7 +26,6 @@ export function SelectedChip() {
   const { data: cell } = useHexDetail(selectedH3);
   const isMobile = useMedia("(max-width: 640px)");
 
-  // Mobile selection UI lives in the bottom sheet header.
   if (isMobile) return null;
   if (!selectedH3) return null;
 
