@@ -1,13 +1,21 @@
 /**
- * Bottom-right map controls: zoom in, zoom out, reset view. Styled to match
- * the HUD panel so the two floating clusters read as one language.
+ * Bottom-right map controls.
+ *
+ * Desktop: vertical panel stack of icon buttons — zoom, home, screenshot,
+ * refresh, help.
+ *
+ * Mobile: single FAB in the bottom-right. Tap to fan out the controls in
+ * a quarter-arc going up-left. Backdrop tap or FAB tap closes. Help is
+ * dropped on mobile (keyboard shortcuts don't apply). When the API
+ * reports a new build, the closed FAB inherits the amber "update
+ * available" tint so the operator sees the alert without opening.
  *
  * Zoom in/out drive DeckGL's controlled view state via the same `flyTo`
  * store action the chip uses — animated, not a hard cut. Reset view fits
  * the map to the currently-loaded hex bounds (sentinel h3 "__home__").
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { useUi } from "../store";
@@ -31,12 +39,24 @@ const SHORTCUTS: { keys: string; desc: string }[] = [
   { keys: "r", desc: "Refresh data (or reload if update available)" },
 ];
 
+type Action = {
+  id: string;
+  title: string;
+  aria: string;
+  onClick: () => void;
+  icon: ReactNode;
+  highlight?: boolean;
+  /** Hidden from the mobile FAB fan. Desktop always shows all actions. */
+  mobileHidden?: boolean;
+};
+
 export function MapControls() {
   const flyToHex = useUi((s) => s.flyToHex);
   const nudgeZoom = useUi((s) => s.nudgeZoom);
   const panelOpen = useUi((s) => s.panelOpen);
   const updateAvailable = useUi((s) => s.updateAvailable);
   const [helpOpen, setHelpOpen] = useState(false);
+  const [fabOpen, setFabOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const qc = useQueryClient();
   const isMobile = useMedia("(max-width: 640px)");
@@ -56,6 +76,102 @@ export function MapControls() {
       setRefreshing(false);
     }
   }
+
+  // Actions are data-driven so desktop stack + mobile fan iterate over the
+  // same source. Ordering here defines fan order (first = closest to FAB).
+  // Refresh is first so its amber alert is the most prominent when the
+  // fan opens.
+  const actions: Action[] = [
+    {
+      id: "refresh",
+      title: updateAvailable
+        ? "New version available — tap to reload"
+        : refreshing
+          ? "Refreshing…"
+          : "Refresh data (R)",
+      aria: updateAvailable ? "Reload for new version" : "Refresh data",
+      onClick: handleRefresh,
+      highlight: updateAvailable,
+      icon: (
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className={cn(refreshing && "animate-spin")}
+        >
+          <polyline points="23 4 23 10 17 10" />
+          <polyline points="1 20 1 14 7 14" />
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+        </svg>
+      ),
+    },
+    {
+      id: "screenshot",
+      title: "Download map as PNG",
+      aria: "Download map as PNG",
+      onClick: () => {
+        const ts = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+        captureMapScreenshot(`lima-map-${ts}.png`);
+      },
+      icon: (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M3 7h4l2-3h6l2 3h4v13H3z" />
+          <circle cx="12" cy="13" r="4" />
+        </svg>
+      ),
+    },
+    {
+      id: "home",
+      title: "Reset view (H)",
+      aria: "Reset view",
+      onClick: () => flyToHex("__home__"),
+      icon: (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M3 11l9-8 9 8" />
+          <path d="M5 10v10h14V10" />
+          <path d="M10 20v-6h4v6" />
+        </svg>
+      ),
+    },
+    {
+      id: "zoom-out",
+      title: "Zoom out (−)",
+      aria: "Zoom out",
+      onClick: () => nudgeZoom(-1),
+      icon: (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+          <line x1="5" y1="12" x2="19" y2="12" />
+        </svg>
+      ),
+    },
+    {
+      id: "zoom-in",
+      title: "Zoom in (+)",
+      aria: "Zoom in",
+      onClick: () => nudgeZoom(+1),
+      icon: (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+          <line x1="12" y1="5" x2="12" y2="19" />
+          <line x1="5" y1="12" x2="19" y2="12" />
+        </svg>
+      ),
+    },
+    {
+      id: "help",
+      title: "Shortcuts (?)",
+      aria: "Show shortcuts",
+      onClick: () => setHelpOpen((v) => !v),
+      // Keyboard shortcuts are meaningless on touch. Desktop-only.
+      mobileHidden: true,
+      icon: <span className="text-[14px] font-semibold leading-none">?</span>,
+    },
+  ];
+
   // On mobile the bottom sheet lives at the bottom edge — controls must
   // float above it. When expanded we just hide the cluster to keep the
   // map tap area clean.
@@ -82,10 +198,24 @@ export function MapControls() {
   }, [flyToHex, nudgeZoom, updateAvailable]);
 
   if (mobileHidden) return null;
+
+  if (isMobile) {
+    const mobileActions = actions.filter((a) => !a.mobileHidden);
+    return (
+      <MobileFab
+        actions={mobileActions}
+        open={fabOpen}
+        setOpen={setFabOpen}
+        updateAvailable={updateAvailable}
+      />
+    );
+  }
+
+  // Desktop: vertical stack, same as before.
   return (
     <div
-      className="absolute right-4 z-20 flex flex-col items-end gap-2 transition-[bottom] duration-200"
-      style={{ bottom: isMobile ? MOBILE_PEEK_HEIGHT + 12 : 16 }}
+      className="absolute right-4 z-20 flex flex-col items-end gap-2"
+      style={{ bottom: 16 }}
     >
       {helpOpen && (
         <div className="panel px-3 py-2.5 w-64 text-xs space-y-1.5">
@@ -112,79 +242,158 @@ export function MapControls() {
         </div>
       )}
       <div className="panel flex flex-col p-1 gap-0.5">
-        <ControlButton onClick={() => nudgeZoom(+1)} title="Zoom in (+)" aria={"Zoom in"}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-            <line x1="12" y1="5" x2="12" y2="19" />
-            <line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-        </ControlButton>
-        <ControlButton onClick={() => nudgeZoom(-1)} title="Zoom out (−)" aria={"Zoom out"}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-            <line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-        </ControlButton>
-        <div className="h-px bg-white/10 my-0.5" />
-        <ControlButton
-          onClick={() => flyToHex("__home__")}
-          title="Reset view (H)"
-          aria={"Reset view"}
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M3 11l9-8 9 8" />
-            <path d="M5 10v10h14V10" />
-            <path d="M10 20v-6h4v6" />
-          </svg>
-        </ControlButton>
-        <ControlButton
-          onClick={() => {
-            const ts = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
-            captureMapScreenshot(`lima-map-${ts}.png`);
-          }}
-          title="Download map as PNG"
-          aria={"Download map as PNG"}
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M3 7h4l2-3h6l2 3h4v13H3z" />
-            <circle cx="12" cy="13" r="4" />
-          </svg>
-        </ControlButton>
-        <ControlButton
-          onClick={handleRefresh}
-          title={
-            updateAvailable
-              ? "New version available — click to reload"
-              : refreshing
-                ? "Refreshing…"
-                : "Refresh data (R)"
-          }
-          aria={updateAvailable ? "Reload for new version" : "Refresh data"}
-          highlight={updateAvailable}
+        {/* Desktop order matches the pre-refactor layout: zoom+, zoom-,
+            divider, home, screenshot, refresh, help. Actions list is
+            fan-ordered (refresh first) so we reindex here. */}
+        {reorderForDesktop(actions).map((a, i, arr) => {
+          const showDividerAfter = a.id === "zoom-out";
+          return (
+            <div key={a.id} className="contents">
+              <ControlButton
+                onClick={a.onClick}
+                title={a.title}
+                aria={a.aria}
+                highlight={a.highlight}
+              >
+                {a.icon}
+              </ControlButton>
+              {showDividerAfter && i < arr.length - 1 && (
+                <div className="h-px bg-white/10 my-0.5" />
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/** Desktop order = zoom+, zoom−, home, screenshot, refresh, help. */
+function reorderForDesktop(actions: Action[]): Action[] {
+  const order = ["zoom-in", "zoom-out", "home", "screenshot", "refresh", "help"];
+  const byId = new Map(actions.map((a) => [a.id, a]));
+  return order.map((id) => byId.get(id)!).filter(Boolean);
+}
+
+/**
+ * Radial FAB for mobile. Fan actions along a quarter arc going up-left
+ * from the FAB when open. Backdrop scrim tap or FAB tap closes.
+ *
+ * Geometry: buttons distributed evenly on a 92px radius from the FAB
+ * center, arc from ~95° (nearly straight up) to ~185° (slightly left of
+ * horizontal). Angles chosen so the top action clears the sheet peek
+ * and the leftmost stays inside the safe area.
+ */
+function MobileFab({
+  actions,
+  open,
+  setOpen,
+  updateAvailable,
+}: {
+  actions: Action[];
+  open: boolean;
+  setOpen: (v: boolean) => void;
+  updateAvailable: boolean;
+}) {
+  const RADIUS = 96;
+  const START_DEG = 180; // straight left
+  const END_DEG = 270; // straight up (CSS: 270° = -90° = up)
+  const n = actions.length;
+
+  return (
+    <>
+      {/* Backdrop scrim — mounted only when open so the map stays
+          interactive at rest. Blurs slightly so the fan pops. */}
+      {open && (
+        <button
+          className="fixed inset-0 z-20 bg-black/25 backdrop-blur-[1px]"
+          onClick={() => setOpen(false)}
+          aria-label="Close map controls"
+        />
+      )}
+
+      <div
+        className="absolute right-4 z-30"
+        style={{ bottom: MOBILE_PEEK_HEIGHT + 12 }}
+      >
+        {/* Fan buttons. Each is absolutely positioned relative to the FAB
+            container. When closed they collapse to (0,0) and fade out —
+            the transition gives a snappy blossom effect. */}
+        {actions.map((a, i) => {
+          // Distribute evenly across the arc. When there's only one, park
+          // it at the midpoint.
+          const t = n === 1 ? 0.5 : i / (n - 1);
+          const deg = START_DEG + (END_DEG - START_DEG) * t;
+          const rad = (deg * Math.PI) / 180;
+          const dx = Math.cos(rad) * RADIUS;
+          const dy = Math.sin(rad) * RADIUS;
+          // Stagger the fade so the fan blossoms rather than snapping.
+          const delayMs = open ? i * 25 : (n - 1 - i) * 15;
+          return (
+            <button
+              key={a.id}
+              onClick={() => {
+                a.onClick();
+                setOpen(false);
+              }}
+              aria-label={a.aria}
+              title={a.title}
+              tabIndex={open ? 0 : -1}
+              className={cn(
+                "panel absolute bottom-0 right-0 h-12 w-12 rounded-full flex items-center justify-center",
+                "transition-[transform,opacity] duration-200 ease-out",
+                open ? "opacity-100" : "opacity-0 pointer-events-none",
+                a.highlight
+                  ? "text-amber-300 bg-amber-500/20 ring-1 ring-amber-400/40"
+                  : "text-panel-fg active:bg-white/10",
+              )}
+              style={{
+                transform: open
+                  ? `translate(${dx}px, ${dy}px)`
+                  : "translate(0, 0)",
+                transitionDelay: `${delayMs}ms`,
+              }}
+            >
+              {a.icon}
+            </button>
+          );
+        })}
+
+        {/* FAB itself. Amber ring when an update is available so the
+            alert is visible without opening the fan. Icon flips between
+            + (closed) and ✕ (open). */}
+        <button
+          onClick={() => setOpen(!open)}
+          aria-label={open ? "Close map controls" : "Open map controls"}
+          aria-expanded={open}
+          className={cn(
+            "panel relative h-14 w-14 rounded-full flex items-center justify-center",
+            "transition-all duration-200 active:scale-95",
+            updateAvailable && !open
+              ? "text-amber-300 ring-2 ring-amber-400/50"
+              : "text-panel-fg",
+          )}
         >
           <svg
-            width="14"
-            height="14"
+            width="22"
+            height="22"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
-            strokeWidth="2"
+            strokeWidth="2.25"
             strokeLinecap="round"
-            strokeLinejoin="round"
-            className={cn(refreshing && "animate-spin")}
+            className={cn(
+              "transition-transform duration-200",
+              open ? "rotate-45" : "rotate-0",
+            )}
+            aria-hidden
           >
-            <polyline points="23 4 23 10 17 10" />
-            <polyline points="1 20 1 14 7 14" />
-            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
           </svg>
-        </ControlButton>
-        <ControlButton
-          onClick={() => setHelpOpen((v) => !v)}
-          title="Shortcuts (?)"
-          aria={"Show shortcuts"}
-        >
-          <span className="text-[13px] font-semibold leading-none">?</span>
-        </ControlButton>
+        </button>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -219,4 +428,3 @@ function ControlButton({
     </button>
   );
 }
-
