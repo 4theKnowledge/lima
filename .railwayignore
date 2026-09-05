@@ -1,0 +1,65 @@
+# .railwayignore controls what `railway up` uploads to Railway.
+#
+# We deploy with `railway up --no-gitignore` (needed to include the
+# gitignored db/land_read.duckdb snapshot). That bypasses .gitignore, so
+# .railwayignore has to re-declare EVERYTHING we don't want uploaded.
+# Without this, the upload balloons to ~1.6 GB (mostly cache/) and
+# Cloudflare rejects it with 413.
+
+# --- Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.venv/
+
+# --- Secrets
+.env
+.env.local
+
+# --- Ingest inputs — ~1.8 GB of raw API responses, not needed at deploy time
+cache/
+
+# --- Frontend has its own service — no need to upload it in the api context
+node_modules/
+web/
+package-lock.json
+package.json
+
+# --- DuckDB write DB (~149 MB) is only used by ingest; runtime reads the
+# read snapshot. NOT ignoring db/land_read.duckdb — that's what ships.
+db/land.duckdb
+db/*.duckdb.wal
+db/*.duckdb.tmp
+
+# --- Build / cache
+*.tsbuildinfo
+.eslintcache
+.parcel-cache/
+
+# --- OS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# --- Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# --- Coverage
+coverage/
+.nyc_output/
+
+# --- Git internals (safe to skip)
+.git/
+
+# --- Docs / notes (not needed at runtime, saves bytes)
+notes/
+BUILD_BRIEF.md
+TASKS.md
+README.md
