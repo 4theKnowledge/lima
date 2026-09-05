@@ -5,7 +5,10 @@
 # args / env vars on the web service.
 
 # ---- build stage ----
-FROM node:20-alpine AS build
+# node:22 needed because corepack pulls the latest pnpm (11.x+) which
+# requires Node >= 22.13. node:20 fails with ERR_UNKNOWN_BUILTIN_MODULE
+# node:sqlite. If you pin an older pnpm via packageManager, node:20 is fine.
+FROM node:22-alpine AS build
 
 RUN corepack enable
 
