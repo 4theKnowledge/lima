@@ -1,136 +1,164 @@
 # Deploy — Railway
 
-Concise reference for how Lima is deployed. If you're setting up from
-scratch, follow the sections in order.
+Live URLs:
+- **Web**: https://web-production-aad5bd.up.railway.app/
+- **API**: https://api-production-bb1337.up.railway.app/
+- **Passcode**: (see Railway dashboard `api` → Variables → `APP_PASSCODE`)
 
 ## Architecture
 
-Two services in one Railway project (`lima`):
+Two services + one bucket, all in the `lima` Railway project:
 
-| Service | Source | What it runs |
+| Resource | Purpose | Source |
 |---|---|---|
-| `web` | GitHub repo `lima`, auto-deploys on push to `main` | Vite build → Caddy static serve |
-| `api` | `railway up --no-gitignore` from laptop (no GitHub source) | FastAPI + baked-in DuckDB snapshot |
+| `api` (service) | FastAPI backend | GitHub `4theKnowledge/lima`, auto-deploy on push |
+| `web` (service) | Vite SPA served by Caddy on :8080 | GitHub, auto-deploy on push, `rootDirectory: web` |
+| `reserved-packet` (bucket) | Holds `db/land_read.duckdb` | Private, S3-compatible. API downloads at container startup via boto3. |
 
-**Why the split.** The API image needs `db/land_read.duckdb` (~139 MB, gitignored).
-GitHub-connected deploys build from the git tree — the snapshot can't ride
-along without committing a huge binary. `railway up --no-gitignore` uploads the local
-working tree (including untracked files), which is the least-friction way
-to ship the snapshot without polluting git.
+The DuckDB snapshot is NEVER baked into the API image and NEVER committed to
+git. It lives only in the bucket + on your laptop for regeneration.
 
-**Shared passcode** (env var `APP_PASSCODE` on api, matched by the passcode
-users type into the web gate) protects the whole app.
+Cross-service env vars use Railway reference syntax (`${{web.RAILWAY_PUBLIC_DOMAIN}}`
+etc.) so `CORS_ORIGINS` and `VITE_API_BASE_URL` auto-update if either service's
+domain changes.
 
-## Project config
+## IaC (single source of truth)
 
-Infrastructure as Code lives in [`.railway/railway.ts`](../.railway/railway.ts).
-It declares both services, Dockerfile paths, healthcheck, and env-var slots.
-Secrets and public URLs use `preserve()` so they never land in git.
-
-Commands:
+Project config lives in [`.railway/railway.ts`](../.railway/railway.ts). Commands:
 
 ```sh
-railway config plan     # preview drift, read-only
-railway config apply    # apply after confirming
-railway config pull     # re-import current state (overwrites the file)
+railway config plan     # preview drift, safe / read-only
+railway config apply    # apply changes after confirming
+railway config pull     # regenerate the file from current Railway state
 ```
 
-## One-time setup (from scratch)
+Rules that saved us pain:
+- **Any variable set out-of-band must be declared in IaC with `preserve()`.**
+  Otherwise `railway config apply` deletes it. Applies to `APP_PASSCODE`,
+  `AWS_*`, `SNAPSHOT_KEY`.
+- **Buckets have region locked at creation.** Declare with the correct
+  region or you'll get `Bucket region cannot be changed` errors.
+- **Deletion is destructive.** `railway config apply` will silently remove
+  services/buckets/vars that were previously created outside IaC unless you
+  declare them.
 
-Assumes GitHub repo `lima` exists and the working tree is pushed to it.
+## Refreshing the DuckDB snapshot
+
+The end-to-end data-refresh flow, after you've regenerated the snapshot locally:
 
 ```sh
-# 1. Install the IaC SDK (needed so railway.ts type-checks against `railway/iac`)
+cd /Users/tylerbikaun/lima     # or wherever your checkout is
+railway link                   # pick: workspace → lima → production → api
+uv run python -m scripts.upload_snapshot
+```
+
+The script:
+1. Fetches fresh S3 credentials via `railway bucket credentials`
+2. Uploads `db/land_read.duckdb` to key `db/land_read.duckdb` in the bucket
+3. Triggers an api redeploy so the container downloads the new snapshot
+
+Flags:
+- `--no-redeploy` — skip the redeploy (do it later, or if you're batching)
+- `--key <path>` — upload under a different key (must match `SNAPSHOT_KEY` env var)
+
+The web service does NOT need redeploying when data changes.
+
+## Rotating bucket credentials
+
+If bucket credentials leak (via git, chat, screen share, etc.):
+
+```sh
+railway link       # api
+railway bucket credentials --bucket reserved-packet --reset --yes
+
+# Refresh the AWS_* env vars on the api service with the new creds:
+eval "$(railway bucket credentials --bucket reserved-packet | grep '^AWS_')"
+railway variables \
+  --set "AWS_ENDPOINT_URL=$AWS_ENDPOINT_URL" \
+  --set "AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID" \
+  --set "AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY" \
+  --set "AWS_S3_BUCKET_NAME=$AWS_S3_BUCKET_NAME"
+unset AWS_ENDPOINT_URL AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_S3_BUCKET_NAME AWS_DEFAULT_REGION AWS_S3_URL_STYLE
+```
+
+Env change auto-triggers an api redeploy.
+
+## Rotating the passcode
+
+```sh
+NEW='pick-a-strong-one'
+
+railway link       # api
+railway variables --set "APP_PASSCODE=$NEW"
+
+# Also tell your friends the new passcode. There's no way to warn active
+# sessions — they'll see 401 on their next request, PasscodeGate clears
+# localStorage and re-prompts.
+```
+
+The passcode is a shared secret. The frontend doesn't know it — users type
+it in via `PasscodeGate.tsx` and the API validates against `APP_PASSCODE`.
+Only need to set it on the api service.
+
+## First-time setup (if starting from scratch)
+
+Assuming a fresh Railway project + a copy of this repo pushed to GitHub:
+
+```sh
+# 1. Install IaC SDK
 npm install railway
 
-# 2. Create the Railway project
-railway init            # name: lima
+# 2. Link and apply
+railway login
+railway init                     # name: lima
+railway config apply             # creates api service + reserved-packet bucket + web service
 
-# 3. Apply the IaC config — this creates both services with the right builders
-railway config apply
+# 3. Connect both services to GitHub in dashboard
+#    api service → Settings → Source → Connect Repo → main
+#    web service → Settings → Source → Connect Repo → main + rootDirectory=web
 
-# 4. Connect the web service to GitHub (dashboard, not CLI):
-#      web service → Settings → Source → Connect Repo → lima → branch main
-#    Leave the api service as "empty source" so `railway up --no-gitignore` works for it.
+# 4. Generate domains
+railway link                     # pick api
+railway domain                   # copy URL — probably api-production-xxxx
 
-# 5. Generate public domains
-railway link            # pick api
-railway domain          # copy the URL
+railway link                     # pick web
+railway domain                   # copy URL — probably web-production-xxxx
 
-railway link            # pick web
-railway domain          # copy the URL
+# 5. IMPORTANT — if either URL 404s ("x-railway-fallback: true"), rename
+#    it via the dashboard: Settings → Networking → pencil icon → change
+#    suffix → save. This is a known Railway routing quirk where new
+#    domains sometimes get target_port unset until rename.
 
-# 6. Set env vars (use the SAME passcode value on both services)
-railway link            # api
-railway variables --set APP_PASSCODE='pick-a-strong-passcode'
-railway variables --set CORS_ORIGINS='https://web-xxx.up.railway.app'
+# 6. Set env vars via CLI (some cannot be in IaC because they're secrets)
+railway link                     # api
+railway variables --set "APP_PASSCODE=pick-a-strong-one"
 
-railway link            # web
-railway variables --set VITE_API_BASE_URL='https://api-xxx.up.railway.app'
-# VITE_APP_PASSCODE_REQUIRED='true' is already set by IaC.
+# 7. Bucket credentials for api (see "Rotating bucket credentials" above)
+eval "$(railway bucket credentials --bucket reserved-packet | grep '^AWS_')"
+railway variables \
+  --set "AWS_ENDPOINT_URL=$AWS_ENDPOINT_URL" \
+  --set "AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID" \
+  --set "AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY" \
+  --set "AWS_S3_BUCKET_NAME=$AWS_S3_BUCKET_NAME" \
+  --set "SNAPSHOT_KEY=db/land_read.duckdb"
+unset AWS_ENDPOINT_URL AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_S3_BUCKET_NAME AWS_DEFAULT_REGION AWS_S3_URL_STYLE
 
-# 7. Deploy the api once (uploads the 139 MB snapshot)
-railway link            # api
-railway up --no-gitignore
+# 8. Upload snapshot to bucket
+uv run python -m scripts.upload_snapshot
 
-# 8. Web deploys automatically on the next git push. To force one now:
-git commit --allow-empty -m "trigger deploy"
-git push
+# Done. Test:
+curl https://<api-url>/health
+curl -H "X-Passcode: pick-a-strong-one" https://<api-url>/lgas
+# Open https://<web-url>/ in browser
 ```
-
-## Env var reference
-
-**On the `api` service:**
-
-| Var | Value | Purpose |
-|---|---|---|
-| `APP_PASSCODE` | secret | Required header value for every non-`/health` request |
-| `CORS_ORIGINS` | `https://<web-domain>` | Comma-separated. Localhost dev origins are always allowed. |
-| `PORT` | (Railway-injected) | Uvicorn binds to this. |
-
-**On the `web` service:**
-
-| Var | Value | Purpose |
-|---|---|---|
-| `VITE_API_BASE_URL` | `https://<api-domain>` | Baked into the JS bundle at build time. |
-| `VITE_APP_PASSCODE_REQUIRED` | `"true"` | Enables the passcode gate. Set by IaC. |
-| `PORT` | (Railway-injected) | Caddy binds to this. |
-
-## Data refresh workflow
-
-When the snapshot changes (new ingest run):
-
-```sh
-# 1. Rebuild the snapshot locally
-uv run python -m ingest.<source>       # updates db/land.duckdb + publishes read snapshot
-uv run python -m scoring.exclude
-uv run python -m scoring.score
-
-# 2. Redeploy only the api (web is unaffected)
-railway link            # api
-railway up --no-gitignore
-```
-
-The web service does NOT need redeploying unless frontend code changes —
-the browser hits the API for fresh data on the next request.
-
-## Smoke test after deploy
-
-1. Visit web URL → shows "Enter passcode" screen
-2. Type passcode → app loads, map renders
-3. Wrong passcode → "Incorrect passcode" error
-4. `curl https://<api-domain>/health` → 200 with snapshot mtime
-5. `curl https://<api-domain>/lgas` → `401 invalid passcode` (no header)
-6. `curl -H "X-Passcode: <passcode>" https://<api-domain>/lgas` → 200 with LGA list
 
 ## Local dev
 
 The passcode gate is off by default in dev:
-
 - `APP_PASSCODE` unset on the API → middleware skipped
 - `VITE_APP_PASSCODE_REQUIRED` unset in web → gate renders children immediately
 
-To test the gate locally, set both in `web/.env.local` and the API terminal:
+To test the gate locally, set both:
 
 ```sh
 # web/.env.local (gitignored)
@@ -139,33 +167,37 @@ VITE_API_BASE_URL=http://localhost:8010
 ```
 
 ```sh
-# api terminal
+# API terminal
 APP_PASSCODE=test uv run uvicorn api.main:app --reload --port 8010
 ```
 
-## Why not use Git LFS to ship the snapshot via GitHub?
+Then type `test` in the browser.
 
-- Files >100 MB can't be pushed to GitHub without LFS at all (hard limit).
-- LFS has per-user bandwidth quotas (1 GB/month free), then paid.
-- Old snapshots pile up in `.git/objects` — every clone pulls them all.
-- Data-refresh cadence means dozens of 139 MB blobs over a year.
+## Gotchas we learned the hard way
 
-`railway up --no-gitignore` sidesteps all of this. The snapshot never touches git.
+- **`railway up` respects `.gitignore`.** Use `--no-gitignore` if you need
+  to upload gitignored files, but then `.railwayignore` must re-exclude
+  `.venv/`, `cache/`, `node_modules/`, `web/` etc. or the upload balloons
+  past Cloudflare's 100 MB limit and gets 413'd.
+- **Railway's Dockerfile builder does NOT auto-inject env vars into
+  `docker build`.** Only Nixpacks does that. For Dockerfiles you must
+  declare each build-time var as `ARG` first, then promote to `ENV`. See
+  `web/Dockerfile`.
+- **Auto-generated Railway domains sometimes come up with `target_port: -`.**
+  Even setting it explicitly via CLI/MCP doesn't always fix the routing.
+  The reliable fix is renaming the domain via the dashboard (Settings →
+  Networking → pencil icon). That forces Railway to regenerate the edge
+  routing table.
+- **DuckDB extensions must be `INSTALL`ed with a writable connection.**
+  Our runtime opens the snapshot read-only, so extensions need to be
+  installed at build time (see `Dockerfile.api`'s `INSTALL spatial +
+  h3` line).
+- **The snapshot path is resolved per-call, not at import time.** The
+  `/tmp/land_read.duckdb` file doesn't exist when `api/db.py` is first
+  imported — the download happens later in the FastAPI lifespan. If you
+  cache the path at import, `/health` fails forever.
 
-## Common gotchas
+## Security TODO
 
-- **API build fails with `db/land_read.duckdb: not found`.** You forgot
-  `--no-gitignore` on `railway up`. `.gitignore` excludes the snapshot from
-  the upload; `.railwayignore` does NOT override `.gitignore` (both are
-  additive), so the flag is the only way to include gitignored files.
-- **`railway config plan` shows drift after dashboard changes.** Expected —
-  the dashboard and IaC file can disagree. Pull to sync (`railway config pull`)
-  or apply to overwrite Railway with the file.
-- **Web build fails with "cannot resolve VITE_API_BASE_URL".** Env var not
-  set on the web service. Set it and redeploy.
-- **API returns 401 for `/lgas` when passcode is right.** Check the header
-  spelling: `X-Passcode` (case-insensitive), value must match `APP_PASSCODE`
-  exactly (no trailing whitespace).
-- **CORS error in browser console.** `CORS_ORIGINS` on the api doesn't
-  include the web domain, or trailing slash mismatch. Set to exact origin
-  with no trailing slash.
+See [`SECURITY_TODO.md`](SECURITY_TODO.md). None block a friends demo but
+all should be addressed before wider release.

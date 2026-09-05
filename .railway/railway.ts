@@ -3,13 +3,14 @@ import { bucket, defineRailway, github, preserve, project, service } from "railw
 export default defineRailway(() => {
   // Object storage for the DuckDB snapshot (~139 MB). Region is fixed at
   // "sjc" (auto-assigned when created); buckets can't be moved. See
-  // notes/SECURITY_TODO.md for hardening options (currently public read).
+  // notes/SECURITY_TODO.md for hardening options.
   const reservedPacket = bucket("reserved-packet", { region: "sjc" });
 
   // Backend: FastAPI. Snapshot downloaded from the reserved-packet bucket
   // to /tmp at container startup via boto3 using S3-compatible credentials.
-  // AWS_* env vars are set out-of-band via `railway variables --set` and
-  // preserved here (not declared in IaC) so credentials don't land in git.
+  // AWS_* env vars are set out-of-band via `railway variables --set` after
+  // `railway bucket credentials`; declared here with preserve() so IaC
+  // keeps them instead of deleting undeclared vars.
   // Deploys from GitHub on push.
   const api = service("api", {
     source: github("4theKnowledge/lima"),
@@ -23,11 +24,8 @@ export default defineRailway(() => {
     replicas: { sfo: 1 },
     env: {
       APP_PASSCODE: preserve(),
-      CORS_ORIGINS: preserve(),
-      // Bucket credentials + object key. Values set out-of-band via
-      // `railway variables --set` after `railway bucket credentials`.
-      // Declared here with preserve() so IaC keeps them instead of
-      // deleting undeclared vars.
+      // Auto-updates when the web service's public domain changes.
+      CORS_ORIGINS: "https://${{web.RAILWAY_PUBLIC_DOMAIN}}",
       AWS_ENDPOINT_URL: preserve(),
       AWS_ACCESS_KEY_ID: preserve(),
       AWS_SECRET_ACCESS_KEY: preserve(),
@@ -38,9 +36,8 @@ export default defineRailway(() => {
 
   // Frontend: Vite SPA served by Caddy on :8080. Deploys from GitHub on
   // push. rootDirectory scopes the build context to web/. VITE_* vars are
-  // baked into the JS bundle at build time; VITE_API_BASE_URL points at
-  // the api service's public URL (hardcoded rather than referenced so the
-  // build is deterministic — if we change API domains, bump this and push).
+  // baked into the JS bundle at build time — when VITE_API_BASE_URL
+  // changes (e.g. api domain rename), Railway auto-rebuilds this service.
   const web = service("web", {
     source: github("4theKnowledge/lima"),
     rootDirectory: "web",
@@ -51,7 +48,8 @@ export default defineRailway(() => {
     },
     replicas: { sfo: 1 },
     env: {
-      VITE_API_BASE_URL: "https://api-production-bb1337.up.railway.app",
+      // Auto-updates when the api service's public domain changes.
+      VITE_API_BASE_URL: "https://${{api.RAILWAY_PUBLIC_DOMAIN}}",
       VITE_APP_PASSCODE_REQUIRED: "true",
     },
   });
