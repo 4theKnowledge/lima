@@ -13,6 +13,9 @@ import type { PropsWithChildren, ReactNode } from "react";
 import { useUi, type Tab } from "../store";
 import { cn } from "../lib/cn";
 import { useMedia } from "../lib/useMedia";
+import { MiniMap } from "./MiniMap";
+import { useHexDetail } from "../hooks";
+import { liveScore } from "../lib/score";
 
 type TabDef = {
   id: Tab;
@@ -145,15 +148,18 @@ export function HudPanel({
 }
 
 /**
- * Bottom-sheet variant of HudPanel for narrow viewports. Closed state shows
- * only the tab bar as a peek strip along the bottom of the screen; tapping
- * a tab (or the grabber) expands the sheet to ~75vh. Backdrop is
- * intentionally not modal — the operator should be able to interact with
- * the map behind it. Tapping outside the sheet body dismisses.
+ * Bottom-sheet variant of HudPanel for narrow viewports. Two modes:
  *
- * Gestures are deliberately minimal: swipe-to-dismiss adds complexity and
- * a dependency; single tap on ✕ or on any tab-body-external area suffices
- * for the "barely-usable" tier.
+ *   - No selection: peek strip along the bottom (Open button + tabs).
+ *     Tapping Open or a tab expands to ~75vh with a translucent backdrop.
+ *   - Selection + open: full-height sheet (100dvh) with a mini-map at the
+ *     top showing the selected hex in its neighbourhood context. Below
+ *     the mini-map: header (LGA + close), tabs, panel content. This
+ *     trades map surface for readable content when the user is actually
+ *     inspecting a cell — the mini-map preserves spatial anchor.
+ *
+ * Gestures are deliberately minimal: no swipe. The Open/Close text
+ * button + ✕ in the header + backdrop-tap all dismiss.
  */
 function MobileSheet({
   open,
@@ -169,12 +175,15 @@ function MobileSheet({
   tab: Tab;
   onTabChange: (t: Tab) => void;
 }>) {
+  const selectedH3 = useUi((s) => s.selectedH3);
+  const compareH3 = useUi((s) => s.compareH3);
+  const fullHeight = open && !!selectedH3;
+
   return (
     <>
-      {/* Non-modal backdrop — tap-to-close only. Pointer-events off when
-          closed so the map is fully interactive; on when open so a tap on
-          the map area behind the sheet dismisses (not consumed by map). */}
-      {open && (
+      {/* Non-modal backdrop when open in short-sheet mode. Full-height
+          mode covers the map entirely, so no backdrop needed. */}
+      {open && !fullHeight && (
         <div
           className="fixed inset-0 z-10 bg-black/20 backdrop-blur-[1px]"
           onClick={onClose}
@@ -184,22 +193,40 @@ function MobileSheet({
       <aside
         className={cn(
           "panel fixed inset-x-0 bottom-0 z-20 flex flex-col overflow-hidden",
-          "rounded-b-none transition-[height,transform] duration-200 ease-out",
+          "rounded-b-none transition-[height] duration-200 ease-out",
         )}
         style={{
-          height: open ? "min(75vh, 640px)" : "auto",
+          height: fullHeight ? "100dvh" : open ? "min(75vh, 640px)" : "auto",
           paddingBottom: "env(safe-area-inset-bottom)",
         }}
       >
-        {/* Explicit open/close toggle. Full-width text button so the
-            affordance is unambiguous — no gesture, no icon-guessing. */}
-        <button
-          className="w-full py-2.5 text-xs font-medium uppercase tracking-wider text-panel-muted active:bg-white/5 transition"
-          onClick={() => (open ? onClose() : onOpen())}
-          aria-expanded={open}
-        >
-          {open ? "Close" : "Open"}
-        </button>
+        {/* Full-height mode: mini-map preview + close-header. Short mode:
+            plain Open/Close text button. */}
+        {fullHeight && selectedH3 ? (
+          <>
+            <div className="h-[30vh] shrink-0 border-b border-white/10">
+              <MiniMap h3={selectedH3} compareH3={compareH3} />
+            </div>
+            <SelectionHeader
+              h3={selectedH3}
+              mode="close"
+              onAction={onClose}
+            />
+          </>
+        ) : selectedH3 ? (
+          // Collapsed with a selection: show the selection header as the
+          // peek strip. Tapping it expands the sheet into full-height mode
+          // with the mini-map. Explicit affordance — not a hidden gesture.
+          <SelectionHeader h3={selectedH3} mode="expand" onAction={onOpen} />
+        ) : (
+          <button
+            className="w-full py-2.5 text-xs font-medium uppercase tracking-wider text-panel-muted active:bg-white/5 transition"
+            onClick={() => (open ? onClose() : onOpen())}
+            aria-expanded={open}
+          >
+            {open ? "Close" : "Open"}
+          </button>
+        )}
         <header className="flex items-stretch border-b border-white/5 shrink-0">
           {/* Icon-only tabs on mobile: each tab takes an equal share of the
               row so all five fit without horizontal scrolling. Title +
@@ -238,6 +265,114 @@ function MobileSheet({
         {open && <div className="flex-1 overflow-hidden">{children}</div>}
       </aside>
     </>
+  );
+}
+
+/**
+ * Header for the mobile sheet when a hex is selected. Two modes:
+ *   - "expand": shown in the collapsed peek strip. Whole row is a button
+ *     that expands the sheet into full-height mode with the mini-map.
+ *     Chevron on the right hints at the interaction.
+ *   - "close":  shown inside the full-height sheet (below the mini-map).
+ *     Same layout, but the trailing control is a ✕ that closes the sheet.
+ */
+function SelectionHeader({
+  h3,
+  mode,
+  onAction,
+}: {
+  h3: string;
+  mode: "expand" | "close";
+  onAction: () => void;
+}) {
+  const weights = useUi((s) => s.weights);
+  const compareArmed = useUi((s) => s.compareArmed);
+  const selectHex = useUi((s) => s.selectHex);
+  const { data: cell } = useHexDetail(h3);
+  const suit =
+    cell && weights ? liveScore(cell, weights) : cell?.suitability_score;
+
+  const isExpand = mode === "expand";
+  const label = isExpand ? "Selected — tap for details" : "Close panel";
+
+  // In expand mode the whole row is the tap target. In close mode the row
+  // is passive and only the trailing ✕ acts — so users can read the header
+  // without accidentally dismissing.
+  const RowTag = isExpand ? "button" : "div";
+
+  return (
+    <div className="flex items-stretch border-b border-white/5 shrink-0">
+      <RowTag
+        {...(isExpand
+          ? {
+              onClick: onAction,
+              "aria-label": label,
+              className:
+                "flex-1 flex items-center gap-3 px-3 py-2 text-left active:bg-white/5 transition",
+            }
+          : {
+              className: "flex-1 flex items-center gap-3 px-3 py-2",
+            })}
+      >
+        <div className="min-w-0 flex-1">
+          <div className="text-[10px] uppercase tracking-wider text-panel-muted leading-tight">
+            {compareArmed ? "Tap hex for B" : "Selected"}
+          </div>
+          <div className="text-sm font-medium text-panel-fg truncate leading-tight">
+            {cell?.lga ?? "…"}
+          </div>
+        </div>
+        <div className="shrink-0 text-right">
+          <div className="text-[10px] uppercase tracking-wider text-panel-muted leading-tight">
+            Suit
+          </div>
+          <div
+            className={cn(
+              "text-sm font-semibold font-mono leading-none tabular-nums",
+              cell?.excluded && "text-amber-300",
+            )}
+          >
+            {cell?.excluded ? "—" : suit != null ? suit.toFixed(2) : "…"}
+          </div>
+        </div>
+        {isExpand && (
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.25"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="text-panel-muted shrink-0"
+            aria-hidden
+          >
+            <polyline points="6 15 12 9 18 15" />
+          </svg>
+        )}
+      </RowTag>
+      {/* Trailing action button, sized as a proper 44px touch target. */}
+      <button
+        className="h-auto w-11 shrink-0 border-l border-white/5 flex items-center justify-center text-panel-muted active:bg-white/10 active:text-panel-fg transition"
+        onClick={isExpand ? () => selectHex(null) : onAction}
+        aria-label={isExpand ? "Clear selection" : "Close panel"}
+        title={isExpand ? "Clear selection" : "Close"}
+      >
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+        >
+          <line x1="6" y1="6" x2="18" y2="18" />
+          <line x1="18" y1="6" x2="6" y2="18" />
+        </svg>
+      </button>
+    </div>
   );
 }
 

@@ -260,13 +260,11 @@ export const useUi = create<UiState>((set) => ({
       h3
         ? {
             selectedH3: h3,
-            panelOpen: true,
+            // Panel is NOT force-opened here. On desktop it's already
+            // open; on mobile the peek strip shows the selection header
+            // and the user taps to expand into the full-height sheet.
+            // Yanking to full-height on every tap kills the map view.
             activeTab: "inspector",
-            // If compare was armed (touch flow), disarm now — the tap
-            // that landed on this cell should route to toggleCompare
-            // via the map click handler, not to a fresh selection. But
-            // the map handler is what calls this; the guard below only
-            // matters if selectHex is called from somewhere else.
             compareArmed: s.compareArmed,
           }
         : { selectedH3: null, compareH3: null, compareArmed: false },
@@ -282,7 +280,6 @@ export const useUi = create<UiState>((set) => ({
       return {
         compareH3: h3,
         compareArmed: false,
-        panelOpen: true,
         activeTab: "inspector",
       };
     }),
