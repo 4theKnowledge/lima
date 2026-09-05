@@ -6,9 +6,11 @@ export default defineRailway(() => {
   // notes/SECURITY_TODO.md for hardening options (currently public read).
   const reservedPacket = bucket("reserved-packet", { region: "sjc" });
 
-  // Backend: FastAPI. Snapshot downloaded from SNAPSHOT_URL to /tmp at
-  // container startup so the image doesn't need to bake in the 139 MB
-  // DuckDB file. Deploys from GitHub on push.
+  // Backend: FastAPI. Snapshot downloaded from the reserved-packet bucket
+  // to /tmp at container startup via boto3 using S3-compatible credentials.
+  // AWS_* env vars are set out-of-band via `railway variables --set` and
+  // preserved here (not declared in IaC) so credentials don't land in git.
+  // Deploys from GitHub on push.
   const api = service("api", {
     source: github("4theKnowledge/lima"),
     build: {
@@ -22,14 +24,31 @@ export default defineRailway(() => {
     env: {
       APP_PASSCODE: preserve(),
       CORS_ORIGINS: preserve(),
-      // AWS_ENDPOINT_URL / AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY /
-      // AWS_S3_BUCKET_NAME are auto-injected by Railway when the bucket
-      // is linked to this service (dashboard: api → Variables → Add Reference
-      // → reserved-packet). Don't declare them here.
+      // See above comment re AWS_* + SNAPSHOT_KEY — set out-of-band.
+    },
+  });
+
+  // Frontend: Vite SPA served by Caddy on :8080. Deploys from GitHub on
+  // push. rootDirectory scopes the build context to web/. VITE_* vars are
+  // baked into the JS bundle at build time; VITE_API_BASE_URL points at
+  // the api service's public URL (hardcoded rather than referenced so the
+  // build is deterministic — if we change API domains, bump this and push).
+  const web = service("web", {
+    source: github("4theKnowledge/lima"),
+    rootDirectory: "web",
+    build: {
+      buildEnvironment: "V3",
+      builder: "DOCKERFILE",
+      dockerfilePath: "Dockerfile",
+    },
+    replicas: { sfo: 1 },
+    env: {
+      VITE_API_BASE_URL: "https://api-production-bb1337.up.railway.app",
+      VITE_APP_PASSCODE_REQUIRED: "true",
     },
   });
 
   return project("lima", {
-    resources: [api, reservedPacket],
+    resources: [api, web, reservedPacket],
   });
 });
