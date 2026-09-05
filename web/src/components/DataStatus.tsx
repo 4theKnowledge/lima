@@ -77,7 +77,7 @@ export function DataStatusPanel() {
                   />
                 </div>
                 <div className="flex items-center justify-between gap-2 mt-1">
-                  <div className="text-[10px] text-panel-muted">
+                  <div className="text-[11px] text-panel-muted">
                     {s.rows_populated.toLocaleString()} of{" "}
                     {data.hex_count.toLocaleString()} cells
                   </div>
@@ -86,7 +86,7 @@ export function DataStatusPanel() {
                       href={s.source_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-[10px] text-emerald-300/90 hover:text-emerald-200 hover:underline"
+                      className="text-[11px] font-medium text-emerald-500 hover:text-emerald-400 underline underline-offset-2 decoration-emerald-500/50 hover:decoration-emerald-400"
                     >
                       Source ↗
                     </a>

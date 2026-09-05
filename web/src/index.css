@@ -25,11 +25,14 @@
   --page-bg: #f5f6f8;
   --page-fg: 24 24 28;
   --panel-bg: 255 255 255;
-  --panel-bg-alpha: 0.92;
+  --panel-bg-alpha: 0.94;
   --panel-border: 0 0 0;
-  --panel-border-alpha: 0.08;
+  --panel-border-alpha: 0.14;
   --panel-fg: 24 24 28;
-  --panel-muted: 96 100 108;
+  /* Darker muted so 10-11px labels and metadata stay legible against the
+     light panel background. Prior value (96/100/108 ≈ #60646c) was too
+     close to the background at small sizes. */
+  --panel-muted: 60 66 76;
   --panel-tint: 0 0 0;
   --accent: 5 150 105; /* emerald-600 for contrast on light */
 }
@@ -91,4 +94,47 @@
 .maplibregl-ctrl-logo,
 .maplibregl-ctrl-attrib {
   display: none !important;
+}
+
+/* Light-theme legibility patch. The app was designed dark-first and uses
+   Tailwind 300-level tints (emerald-300, amber-300, red-300) that read
+   fine on the dark panel but wash out on white. Rather than plumb
+   theme-aware colours through every component, we shift the specific
+   colour utilities used in the panels one step darker in light theme. */
+:root[data-theme="light"] .text-emerald-300 {
+  color: rgb(4 120 87); /* emerald-700 */
+}
+:root[data-theme="light"] .text-emerald-200 {
+  color: rgb(6 95 70); /* emerald-800 */
+}
+:root[data-theme="light"] .text-amber-300 {
+  color: rgb(180 83 9); /* amber-700 */
+}
+:root[data-theme="light"] .text-red-300 {
+  color: rgb(185 28 28); /* red-700 */
+}
+:root[data-theme="light"] .text-sky-300 {
+  color: rgb(3 105 161); /* sky-700 */
+}
+:root[data-theme="light"] .bg-emerald-400\/60 {
+  background-color: rgb(16 185 129 / 0.9); /* emerald-500 */
+}
+:root[data-theme="light"] .bg-amber-400\/60 {
+  background-color: rgb(217 119 6 / 0.9); /* amber-600 */
+}
+:root[data-theme="light"] .bg-red-400\/60 {
+  background-color: rgb(220 38 38 / 0.9); /* red-600 */
+}
+/* Track underneath the progress bar was bg-white/5 — invisible on white. */
+:root[data-theme="light"] .bg-white\/5 {
+  background-color: rgb(0 0 0 / 0.06);
+}
+/* Inspector compare banner used bg-amber-500/10 which vanishes on white. */
+:root[data-theme="light"] .bg-amber-500\/10 {
+  background-color: rgb(245 158 11 / 0.15);
+}
+/* Inspector "A" side in compare mode was styled text-white for dark contrast;
+   swap to panel-fg so it stays readable on white. */
+:root[data-theme="light"] .text-white {
+  color: rgb(var(--panel-fg));
 }
