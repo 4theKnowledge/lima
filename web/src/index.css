@@ -25,7 +25,11 @@
   --page-bg: #f5f6f8;
   --page-fg: 24 24 28;
   --panel-bg: 255 255 255;
-  --panel-bg-alpha: 0.94;
+  /* Near-opaque panel surface so map colours behind don't wash out the
+     panel text. The panel is still slightly translucent so it doesn't
+     look like a jarring flat sheet, but at 0.98 it reads as opaque at a
+     glance. */
+  --panel-bg-alpha: 0.98;
   --panel-border: 0 0 0;
   --panel-border-alpha: 0.14;
   --panel-fg: 24 24 28;
@@ -104,8 +108,11 @@
 :root[data-theme="light"] .text-emerald-300 {
   color: rgb(4 120 87); /* emerald-700 */
 }
-:root[data-theme="light"] .text-emerald-200 {
-  color: rgb(6 95 70); /* emerald-800 */
+:root[data-theme="light"] .text-emerald-200,
+:root[data-theme="light"] .text-emerald-100 {
+  color: rgb(6 78 59); /* emerald-900 — deep green so 100/200 tints
+                          used for "active/selected" chip text stay
+                          legible on the pale emerald-500/20 chip bg. */
 }
 :root[data-theme="light"] .text-amber-300 {
   color: rgb(180 83 9); /* amber-700 */
@@ -115,6 +122,20 @@
 }
 :root[data-theme="light"] .text-sky-300 {
   color: rgb(3 105 161); /* sky-700 */
+}
+/* Active/selected segmented-button chip backgrounds — the pale emerald
+   tint that reads as "highlight" on dark is nearly white on white. Bump
+   opacity so the highlight is visible. */
+:root[data-theme="light"] .bg-emerald-500\/10,
+:root[data-theme="light"] .bg-emerald-500\/20 {
+  background-color: rgb(16 185 129 / 0.3);
+}
+:root[data-theme="light"] .bg-emerald-500\/15 {
+  background-color: rgb(16 185 129 / 0.3);
+}
+/* Border used on active/hover chip stays too pale in light — deepen it. */
+:root[data-theme="light"] .border-emerald-400\/40 {
+  border-color: rgb(5 150 105 / 0.6); /* emerald-600 */
 }
 :root[data-theme="light"] .bg-emerald-400\/60 {
   background-color: rgb(16 185 129 / 0.9); /* emerald-500 */
