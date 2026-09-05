@@ -11,6 +11,7 @@ Rules of engagement:
 
 from __future__ import annotations
 
+import json
 import os
 from pathlib import Path
 from typing import Any
@@ -19,6 +20,7 @@ import h3 as h3lib
 import httpx
 import yaml
 from fastapi import APIRouter, HTTPException, Query
+from fastapi.responses import Response
 
 from api.db import connect, snapshot_mtime
 from api.schemas import (
@@ -213,10 +215,19 @@ def list_lgas() -> list[str]:
     return [r[0] for r in rows]
 
 
-@router.get("/hex", response_model=list[HexCell])
+@router.get("/hex")
 def get_hex(
     lgas: list[str] | None = Query(default=None),
-) -> list[HexCell]:
+) -> Response:
+    """Bulk hex slice — the hot path.
+
+    Deliberately does NOT declare response_model=list[HexCell]. Doing so
+    forces FastAPI to run jsonable_encoder over ~11k rows on every request,
+    which measures at ~200 ms of pure CPU for our payload — an order of
+    magnitude more than the SQL itself. The wire shape is identical either
+    way (json.dumps on the same dicts), and the schema is fixed by the
+    HEX_COLUMNS SELECT list, so runtime validation adds no safety here.
+    """
     con = connect()
     if lgas:
         placeholders = ", ".join(["?"] * len(lgas))
@@ -227,9 +238,13 @@ def get_hex(
     else:
         cursor = con.execute(f"SELECT {HEX_COLUMNS} FROM hex")
     rows = cursor.fetchall()
-    dicts = [_row_to_dict(cursor, r) for r in rows]
+    cols = [c[0] for c in cursor.description]
     con.close()
-    return [HexCell(**d) for d in dicts]
+    dicts = [dict(zip(cols, r, strict=True)) for r in rows]
+    # default=str handles datetime / Decimal / anything else DuckDB might
+    # surface; we still control the SELECT list so surprises are limited.
+    body = json.dumps(dicts, default=str, separators=(",", ":"))
+    return Response(content=body, media_type="application/json")
 
 
 @router.get("/hex/{h3}", response_model=HexDetail)

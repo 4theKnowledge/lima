@@ -199,7 +199,12 @@ function MobileSheet({
         >
           <span className="block h-1 w-10 rounded-full bg-white/25" />
         </button>
-        <header className="flex items-stretch border-b border-white/5 shrink-0 overflow-x-auto">
+        <header className="flex items-stretch border-b border-white/5 shrink-0">
+          {/* Icon-only tabs on mobile: each tab takes an equal share of the
+              row so all five fit without horizontal scrolling. Title +
+              aria-label carry the semantics that the visible label would;
+              the active tab still gets the emerald underline as the
+              affordance for "you are here". */}
           <div role="tablist" className="flex flex-1 min-w-0">
             {TABS.map((t) => {
               const active = tab === t.id;
@@ -208,20 +213,20 @@ function MobileSheet({
                   key={t.id}
                   role="tab"
                   aria-selected={active}
+                  aria-label={t.label}
                   onClick={() => {
                     onTabChange(t.id);
                     onOpen();
                   }}
                   title={t.title}
                   className={cn(
-                    "flex flex-col items-center justify-center gap-0.5 min-w-0 px-3 py-2.5 text-[11px] font-medium border-b-2 transition",
+                    "flex-1 flex items-center justify-center px-2 py-3 border-b-2 transition",
                     active
-                      ? "flex-1 border-emerald-400 text-emerald-200"
-                      : "shrink-0 border-transparent text-panel-muted",
+                      ? "border-emerald-400 text-emerald-200"
+                      : "border-transparent text-panel-muted",
                   )}
                 >
-                  <span>{t.icon}</span>
-                  <span className="truncate">{t.label}</span>
+                  {t.icon}
                 </button>
               );
             })}

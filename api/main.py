@@ -27,6 +27,7 @@ Env vars:
 from __future__ import annotations
 
 import os
+import time
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -94,6 +95,22 @@ app.add_middleware(
     allow_methods=["GET", "PUT", "POST", "OPTIONS"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def request_timing(request: Request, call_next):
+    # One-line access log so prod slowness has real numbers. Cheap: no
+    # formatting cost outside the print. Skips OPTIONS to keep noise down.
+    if request.method == "OPTIONS":
+        return await call_next(request)
+    t0 = time.perf_counter()
+    response = await call_next(request)
+    ms = (time.perf_counter() - t0) * 1000
+    print(
+        f"[req] {request.method} {request.url.path} → {response.status_code} in {ms:.0f}ms",
+        flush=True,
+    )
+    return response
 
 
 @app.middleware("http")

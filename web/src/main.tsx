@@ -14,6 +14,12 @@ const queryClient = new QueryClient({
       // changes (surfaced via /health) — see useHexData.
       staleTime: 60_000,
       refetchOnWindowFocus: false,
+      // TanStack's default is 3 retries with exponential backoff — a first
+      // cold-start failure then hides behind ~20 s of silent waiting.
+      // One quick retry catches transient blips without stretching the
+      // "app is slow" experience into "app is broken".
+      retry: 1,
+      retryDelay: 500,
     },
   },
 });
