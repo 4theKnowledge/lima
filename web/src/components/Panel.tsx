@@ -207,17 +207,16 @@ function MobileSheet({
             <div className="h-[30vh] shrink-0 border-b border-white/10">
               <MiniMap h3={selectedH3} compareH3={compareH3} />
             </div>
-            <SelectionHeader
-              h3={selectedH3}
-              mode="close"
-              onAction={onClose}
-            />
+            <SelectionHeader h3={selectedH3} onToggle={onClose} open />
           </>
         ) : selectedH3 ? (
-          // Collapsed with a selection: show the selection header as the
-          // peek strip. Tapping it expands the sheet into full-height mode
-          // with the mini-map. Explicit affordance — not a hidden gesture.
-          <SelectionHeader h3={selectedH3} mode="expand" onAction={onOpen} />
+          // Collapsed with a selection: header row IS the toggle. Tap
+          // anywhere on it to expand into full-height mode.
+          <SelectionHeader
+            h3={selectedH3}
+            onToggle={onOpen}
+            open={false}
+          />
         ) : (
           <button
             className="w-full py-2.5 text-xs font-medium uppercase tracking-wider text-panel-muted active:bg-white/5 transition"
@@ -269,110 +268,55 @@ function MobileSheet({
 }
 
 /**
- * Header for the mobile sheet when a hex is selected. Two modes:
- *   - "expand": shown in the collapsed peek strip. Whole row is a button
- *     that expands the sheet into full-height mode with the mini-map.
- *     Chevron on the right hints at the interaction.
- *   - "close":  shown inside the full-height sheet (below the mini-map).
- *     Same layout, but the trailing control is a ✕ that closes the sheet.
+ * Header for the mobile sheet when a hex is selected. The entire row is
+ * the toggle — tap to expand into full-height view, tap again to collapse
+ * back to the peek strip. No icons; the panel's motion is the affordance.
+ * To clear the selection entirely, tap the same hex on the map again.
  */
 function SelectionHeader({
   h3,
-  mode,
-  onAction,
+  open,
+  onToggle,
 }: {
   h3: string;
-  mode: "expand" | "close";
-  onAction: () => void;
+  open: boolean;
+  onToggle: () => void;
 }) {
   const weights = useUi((s) => s.weights);
   const compareArmed = useUi((s) => s.compareArmed);
-  const selectHex = useUi((s) => s.selectHex);
   const { data: cell } = useHexDetail(h3);
   const suit =
     cell && weights ? liveScore(cell, weights) : cell?.suitability_score;
 
-  const isExpand = mode === "expand";
-  const label = isExpand ? "Selected — tap for details" : "Close panel";
-
-  // In expand mode the whole row is the tap target. In close mode the row
-  // is passive and only the trailing ✕ acts — so users can read the header
-  // without accidentally dismissing.
-  const RowTag = isExpand ? "button" : "div";
-
   return (
-    <div className="flex items-stretch border-b border-white/5 shrink-0">
-      <RowTag
-        {...(isExpand
-          ? {
-              onClick: onAction,
-              "aria-label": label,
-              className:
-                "flex-1 flex items-center gap-3 px-3 py-2 text-left active:bg-white/5 transition",
-            }
-          : {
-              className: "flex-1 flex items-center gap-3 px-3 py-2",
-            })}
-      >
-        <div className="min-w-0 flex-1">
-          <div className="text-[10px] uppercase tracking-wider text-panel-muted leading-tight">
-            {compareArmed ? "Tap hex for B" : "Selected"}
-          </div>
-          <div className="text-sm font-medium text-panel-fg truncate leading-tight">
-            {cell?.lga ?? "…"}
-          </div>
+    <button
+      onClick={onToggle}
+      aria-expanded={open}
+      aria-label={open ? "Collapse panel" : "Expand panel"}
+      className="w-full flex items-center gap-3 px-3 py-2.5 text-left border-b border-white/5 shrink-0 active:bg-white/5 transition"
+    >
+      <div className="min-w-0 flex-1">
+        <div className="text-[10px] uppercase tracking-wider text-panel-muted leading-tight">
+          {compareArmed ? "Tap hex for B" : "Selected"}
         </div>
-        <div className="shrink-0 text-right">
-          <div className="text-[10px] uppercase tracking-wider text-panel-muted leading-tight">
-            Suit
-          </div>
-          <div
-            className={cn(
-              "text-sm font-semibold font-mono leading-none tabular-nums",
-              cell?.excluded && "text-amber-300",
-            )}
-          >
-            {cell?.excluded ? "—" : suit != null ? suit.toFixed(2) : "…"}
-          </div>
+        <div className="text-sm font-medium text-panel-fg truncate leading-tight">
+          {cell?.lga ?? "…"}
         </div>
-        {isExpand && (
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.25"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="text-panel-muted shrink-0"
-            aria-hidden
-          >
-            <polyline points="6 15 12 9 18 15" />
-          </svg>
-        )}
-      </RowTag>
-      {/* Trailing action button, sized as a proper 44px touch target. */}
-      <button
-        className="h-auto w-11 shrink-0 border-l border-white/5 flex items-center justify-center text-panel-muted active:bg-white/10 active:text-panel-fg transition"
-        onClick={isExpand ? () => selectHex(null) : onAction}
-        aria-label={isExpand ? "Clear selection" : "Close panel"}
-        title={isExpand ? "Clear selection" : "Close"}
-      >
-        <svg
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
+      </div>
+      <div className="shrink-0 text-right">
+        <div className="text-[10px] uppercase tracking-wider text-panel-muted leading-tight">
+          Suit
+        </div>
+        <div
+          className={cn(
+            "text-sm font-semibold font-mono leading-none tabular-nums",
+            cell?.excluded && "text-amber-300",
+          )}
         >
-          <line x1="6" y1="6" x2="18" y2="18" />
-          <line x1="18" y1="6" x2="6" y2="18" />
-        </svg>
-      </button>
-    </div>
+          {cell?.excluded ? "—" : suit != null ? suit.toFixed(2) : "…"}
+        </div>
+      </div>
+    </button>
   );
 }
 

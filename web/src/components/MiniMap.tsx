@@ -20,7 +20,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import { useHex } from "../hooks";
 import { CATEGORICAL_METRICS, HIGH_IS_BAD, useUi } from "../store";
 import { applyLiveScoring } from "../lib/score";
-import { categorical, gradient } from "../lib/color";
+import { categorical, dim, gradient } from "../lib/color";
 import { useSettings } from "../settings";
 import { useMedia } from "../lib/useMedia";
 import type { HexCell } from "../types";
@@ -31,8 +31,12 @@ const BASEMAP_DARK =
   "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json";
 
 // Fixed zoom for the preview. Chosen so a single H3 res-7 cell (~5km edge)
-// sits comfortably with ~2-3 rings of neighbours around it for context.
-const PREVIEW_ZOOM = 9;
+// dominates the view with ~1 ring of neighbours around it for context.
+const PREVIEW_ZOOM = 10.5;
+
+// Same value the main map uses for non-focal cells — keeps the preview
+// like-for-like with what the operator sees behind the sheet.
+const SPOTLIGHT_DIM = 0.35;
 
 export function MiniMap({ h3, compareH3 }: { h3: string; compareH3?: string | null }) {
   const { data: rows } = useHex();
@@ -95,12 +99,19 @@ export function MiniMap({ h3, compareH3 }: { h3: string; compareH3?: string | nu
       extruded: false,
       highPrecision: "auto",
       getHexagon: (d) => d.h3,
-      getFillColor: (d) =>
-        isCategorical
+      getFillColor: (d) => {
+        const base = isCategorical
           ? categorical(d[metric] as boolean | null | undefined, d.excluded, palette)
-          : gradient(d[metric] as number | null, vmin, vmax, d.excluded, invert, palette),
+          : gradient(d[metric] as number | null, vmin, vmax, d.excluded, invert, palette);
+        // Spotlight: A (and B in compare mode) stay bright; everything
+        // else dims. Same behaviour + factor as the main map.
+        if (d.h3 !== h3 && !(compareH3 && d.h3 === compareH3)) {
+          return dim(base, SPOTLIGHT_DIM);
+        }
+        return base;
+      },
       updateTriggers: {
-        getFillColor: [metric, vmin, vmax, invert, isCategorical, weights, palette],
+        getFillColor: [metric, vmin, vmax, invert, isCategorical, weights, palette, h3, compareH3],
       },
     });
 
