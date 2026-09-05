@@ -6,6 +6,8 @@
  * apply immediately; no "save" button needed.
  */
 
+import { useState } from "react";
+
 import {
   resetSettings,
   setSetting,
@@ -14,9 +16,15 @@ import {
   type Theme,
   type Units,
 } from "../settings";
+import { useHealth } from "../hooks";
 import { InfoTip } from "./InfoTip";
 import { gradientCss } from "../lib/color";
 import { cn } from "../lib/cn";
+
+// Baked in at build time by the Dockerfile ARG. Undefined in dev unless
+// you set VITE_BUILD_ID explicitly (fine — the row just shows "dev").
+const FRONTEND_BUILD_ID: string | null =
+  (import.meta.env.VITE_BUILD_ID as string | undefined) ?? null;
 
 export function SettingsPanel() {
   const settings = useSettings();
@@ -99,6 +107,14 @@ export function SettingsPanel() {
       </section>
 
       <section>
+        <SectionLabel
+          label="Build"
+          tip="Which version of the app you're running. Useful if support asks. Click a SHA to copy the full value; a mismatch usually just means one side redeployed a moment ago."
+        />
+        <BuildInfo />
+      </section>
+
+      <section>
         <button
           onClick={() => {
             if (confirm("Reset all settings to defaults?")) resetSettings();
@@ -160,6 +176,51 @@ function Segmented<T extends string>({
           </button>
         );
       })}
+    </div>
+  );
+}
+
+function BuildInfo() {
+  const { data: health } = useHealth();
+  const apiBuild = health?.build_id ?? null;
+  return (
+    <div className="rounded-md border border-white/5 divide-y divide-white/5 text-xs">
+      <BuildRow label="Frontend" sha={FRONTEND_BUILD_ID} />
+      <BuildRow label="API" sha={apiBuild} />
+    </div>
+  );
+}
+
+function BuildRow({ label, sha }: { label: string; sha: string | null }) {
+  const [copied, setCopied] = useState(false);
+  const short = sha ? sha.slice(0, 7) : null;
+
+  async function copy() {
+    if (!sha) return;
+    try {
+      await navigator.clipboard.writeText(sha);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1200);
+    } catch {
+      // Clipboard API blocked (rare, e.g. some iOS PWA contexts). Silent
+      // fail is fine — user can still read the short SHA.
+    }
+  }
+
+  return (
+    <div className="flex items-center justify-between px-2.5 py-2">
+      <span className="text-panel-muted">{label}</span>
+      {short ? (
+        <button
+          onClick={copy}
+          title={copied ? "Copied" : `Copy full SHA (${sha})`}
+          className="font-mono text-[11px] text-panel-fg hover:text-emerald-300 transition"
+        >
+          {copied ? "copied" : short}
+        </button>
+      ) : (
+        <span className="font-mono text-[11px] text-panel-muted">dev</span>
+      )}
     </div>
   );
 }
