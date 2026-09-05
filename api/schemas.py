@@ -108,6 +108,7 @@ class DataSource(BaseModel):
     label: str          # UI-facing name
     rows_populated: int  # hex cells with a non-null value on the key column
     last_ingest: str | None  # ISO timestamp, best-effort
+    source_url: str | None = None  # canonical landing page (DataWA / SILO)
 
 
 class DataStatus(BaseModel):

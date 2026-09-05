@@ -11,6 +11,57 @@
 import type { Metric } from "../store";
 import type { FactorName } from "../types";
 
+/**
+ * Canonical DataWA / SILO landing pages for the layers we surface. Used to
+ * render a "Source" link at the bottom of inspector tooltips and next to
+ * each row on the Data tab. Keys are the short codes we already print in
+ * the DataStatus per-source labels.
+ */
+export const SOURCES = {
+  "DWER-034": {
+    label: "DWER-034 · RIWI groundwater areas",
+    url: "https://catalogue.data.wa.gov.au/dataset/riwi-act-groundwater-areas-dwer-034",
+  },
+  "DWER-037": {
+    label: "DWER-037 · RIWI surface-water areas",
+    url: "https://catalogue.data.wa.gov.au/dataset/riwi-act-surface-water-areas-dwer-037",
+  },
+  "DWER-026": {
+    label: "DWER-026 · Groundwater salinity",
+    url: "https://catalogue.data.wa.gov.au/dataset/hydrogeochemistry-groundwater-salinity-statewide-dwer-026",
+  },
+  "DPIRD-027": {
+    label: "DPIRD-027 · Land capability",
+    url: "https://catalogue.data.wa.gov.au/dataset/rangeland-land-systems-mapping-dpird-027",
+  },
+  "OBRM-024": {
+    label: "OBRM-024 · Bushfire prone areas",
+    url: "https://catalogue.data.wa.gov.au/dataset/bushfire-prone-areas-obrm-024",
+  },
+  "LGATE-195": {
+    label: "LGATE-195 · Roads (simplified)",
+    url: "https://catalogue.data.wa.gov.au/dataset/roads-lgate-195",
+  },
+  "LGATE-248": {
+    label: "LGATE-248 · Townsites",
+    url: "https://catalogue.data.wa.gov.au/dataset/townsites-lgate-248",
+  },
+  "DBCA-011": {
+    label: "DBCA-011 · Managed lands",
+    url: "https://catalogue.data.wa.gov.au/dataset/dbca-legislated-lands-and-waters-dbca-011",
+  },
+  "LGATE-001": {
+    label: "LGATE-001 · Cadastre",
+    url: "https://catalogue.data.wa.gov.au/dataset/cadastre-lgate-001",
+  },
+  SILO: {
+    label: "SILO · Growing-season rainfall",
+    url: "https://www.longpaddock.qld.gov.au/silo/gridded-data/",
+  },
+} as const;
+
+export type SourceKey = keyof typeof SOURCES;
+
 export const WEIGHT_TIP: Record<FactorName, string> = {
   water:
     "How much water access matters to you. Cells in proclaimed groundwater or " +
@@ -139,6 +190,25 @@ export const SENSITIVITY_TIP =
   "Runs the scoring with each weight shifted ±25% and checks whether the " +
   "top-LGA ranking stays the same. STABLE = ranking is data-driven. " +
   "UNSTABLE = the ranking mostly reflects your weight choices, not the data.";
+
+/**
+ * Optional source-key annotations for inspector tooltips. Rendered as a
+ * clickable footer beneath the tooltip body when present. Keys line up with
+ * INSPECTOR_TIP.
+ */
+export const INSPECTOR_TIP_SOURCE: Partial<Record<string, SourceKey>> = {
+  capabilityConfidence: "DPIRD-027",
+  parcels: "LGATE-001",
+  groundwater: "DWER-034",
+  surfaceWater: "DWER-037",
+  salinity: "DWER-026",
+  bushfire: "OBRM-024",
+  dbca: "DBCA-011",
+  townDist: "LGATE-248",
+  roadDist: "LGATE-195",
+  rainMean: "SILO",
+  rainTrend: "SILO",
+};
 
 export const INSPECTOR_TIP = {
   suitability:

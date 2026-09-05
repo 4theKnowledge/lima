@@ -103,6 +103,7 @@ export type DataSource = {
   label: string;
   rows_populated: number;
   last_ingest: string | null;
+  source_url: string | null;
 };
 
 export type DataStatus = {

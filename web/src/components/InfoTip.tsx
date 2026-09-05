@@ -13,6 +13,7 @@ import { createPortal } from "react-dom";
 
 import { cn } from "../lib/cn";
 import { useMedia } from "../lib/useMedia";
+import { SOURCES, type SourceKey } from "../lib/copy";
 
 const TOOLTIP_W = 260;
 const TOOLTIP_GAP = 8;
@@ -20,9 +21,12 @@ const TOOLTIP_GAP = 8;
 export function InfoTip({
   children,
   className,
+  source,
 }: {
   children: ReactNode;
   className?: string;
+  /** Optional attribution — renders a "Source: <label>" link at the bottom. */
+  source?: SourceKey;
 }) {
   const [open, setOpen] = useState(false);
   const btnRef = useRef<HTMLButtonElement>(null);
@@ -140,13 +144,34 @@ export function InfoTip({
                 pos.placement === "top" ? "translateY(-100%)" : undefined,
               zIndex: 1000,
             }}
+            // Popover accepts pointer events only when it contains a link
+            // (source attribution). Otherwise it stays inert so hovering it
+            // doesn't hijack the map underneath.
             className={cn(
               "panel !bg-neutral-900/98 px-3 py-2 text-[11px] leading-snug",
               "text-panel-fg font-normal normal-case tracking-normal",
-              "pointer-events-none",
+              source ? "pointer-events-auto" : "pointer-events-none",
             )}
+            // Keep the tooltip open while the pointer sits over it, so
+            // touch users (and desktop users hovering to click the source
+            // link) don't have it snap shut on the way across.
+            onMouseEnter={source && !isTouch ? () => setOpen(true) : undefined}
+            onMouseLeave={source && !isTouch ? () => setOpen(false) : undefined}
           >
             {children}
+            {source && SOURCES[source] && (
+              <div className="mt-1.5 pt-1.5 border-t border-white/10">
+                <a
+                  href={SOURCES[source].url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-emerald-300 hover:underline break-words"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  Source: {SOURCES[source].label} ↗
+                </a>
+              </div>
+            )}
           </div>,
           document.body,
         )}

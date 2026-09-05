@@ -31,6 +31,7 @@ import {
 import { applyLiveScoring } from "../lib/score";
 import { categorical, dim, gradient } from "../lib/color";
 import { formatArea, useSettings } from "../settings";
+import { useMedia } from "../lib/useMedia";
 import type { HexCell } from "../types";
 
 const INITIAL_VIEW = {
@@ -41,11 +42,15 @@ const INITIAL_VIEW = {
   bearing: 0,
 };
 
-// CartoDB Positron with labels — soft greyscale basemap with place names
-// (towns, roads, water bodies). Free, no auth. The `-nolabels-` variant
-// hides them; keeping labels helps the operator anchor to real places.
-const BASEMAP_STYLE =
+// CartoDB Positron (light) / Dark Matter (dark) — soft basemaps with place
+// names (towns, roads, water bodies). Free, no auth. `-nolabels-` variants
+// hide labels; keeping labels helps the operator anchor to real places.
+// Basemap swaps with the app theme so the hex overlay sits on a matching
+// backdrop.
+const BASEMAP_STYLE_LIGHT =
   "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json";
+const BASEMAP_STYLE_DARK =
+  "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json";
 
 // Alpha multiplier for non-selected cells when the operator has picked one.
 // 0.35 keeps enough contour to see regional pattern but clearly recedes.
@@ -69,7 +74,14 @@ export function MapView() {
   const flyTo = useUi((s) => s.flyTo);
   const zoomNudge = useUi((s) => s.zoomNudge);
   const panelOpen = useUi((s) => s.panelOpen);
-  const { palette } = useSettings();
+  const { palette, theme } = useSettings();
+  // Resolve "auto" against the OS preference so the basemap matches what
+  // useApplyTheme wrote to <html data-theme>. Kept in-component so the map
+  // swaps immediately when Settings changes theme (no reload needed).
+  const prefersLight = useMedia("(prefers-color-scheme: light)");
+  const isDark =
+    theme === "dark" || (theme === "auto" && !prefersLight);
+  const basemapStyle = isDark ? BASEMAP_STYLE_DARK : BASEMAP_STYLE_LIGHT;
   const mapRef = useRef<MapRef>(null);
   const [hover, setHover] = useState<{
     x: number;
@@ -349,9 +361,13 @@ export function MapView() {
       >
         <Map
           ref={mapRef}
-          mapStyle={BASEMAP_STYLE}
+          mapStyle={basemapStyle}
           reuseMaps
           attributionControl={false}
+          // Required for the screenshot button — .toDataURL / drawImage on
+          // the maplibre canvas reads a black frame otherwise. Small perf
+          // cost, worth it for the "download this view" flow.
+          preserveDrawingBuffer
         />
       </DeckGL>
       {hover && (
@@ -379,16 +395,60 @@ function HoverCard({
 }) {
   const HOVER_W = 260;
   const HOVER_H = 130;
+
+  // Reserved rectangles the tooltip must not overlap. Values are rough
+  // bounding boxes for the floating HUDs so the tooltip flips to another
+  // corner when a hover point would place it under one. Kept as constants
+  // here because the HUDs are fixed-position and dimensions are stable.
   const rightBound =
     window.innerWidth - (panelOpen ? PANEL_RIGHT_MARGIN : 12) - HOVER_W;
+  const bottomBound = window.innerHeight - 12 - HOVER_H;
+
+  // Top-left cluster: brand chip (Toolbar) + selected chip stack. Height
+  // grows when a cell is selected. Overestimate slightly (250) so we
+  // don't clip the compare buttons on the SelectedChip.
+  const TL_W = 360;
+  const TL_H = 250;
+  // Bottom-right cluster: MapControls (5 buttons ≈ 200px tall + margin).
+  const BR_W = 60;
+  const BR_H = 240;
+  const brLeft = window.innerWidth - BR_W - 12;
+  const brTop = window.innerHeight - BR_H - 12;
+
   const preferredLeft = x + 14;
-  const left =
+  let left =
     preferredLeft > rightBound ? Math.max(12, x - HOVER_W - 14) : preferredLeft;
   const preferredTop = y + 14;
-  const top =
-    preferredTop + HOVER_H > window.innerHeight - 12
-      ? Math.max(12, y - HOVER_H - 14)
-      : preferredTop;
+  let top =
+    preferredTop > bottomBound ? Math.max(12, y - HOVER_H - 14) : preferredTop;
+
+  // Overlap tests: if the chosen placement would sit under a HUD, nudge
+  // by flipping to the opposite side of the cursor. Keeps the tooltip
+  // near the hover point instead of doing a full-frame re-solve.
+  const overlaps = (
+    ax: number,
+    ay: number,
+    aw: number,
+    ah: number,
+    bx: number,
+    by: number,
+    bw: number,
+    bh: number,
+  ) => ax < bx + bw && ax + aw > bx && ay < by + bh && ay + ah > by;
+
+  // Overlap with top-left HUD stack → push tooltip to the right of the cursor
+  // and below it.
+  if (overlaps(left, top, HOVER_W, HOVER_H, 12, 12, TL_W, TL_H)) {
+    left = Math.min(rightBound, x + 14);
+    top = Math.min(bottomBound, Math.max(TL_H + 24, y + 14));
+  }
+  // Overlap with bottom-right controls → push tooltip to the left of the
+  // cursor and above.
+  if (overlaps(left, top, HOVER_W, HOVER_H, brLeft, brTop, BR_W, BR_H)) {
+    left = Math.max(12, x - HOVER_W - 14);
+    top = Math.max(12, Math.min(brTop - HOVER_H - 8, y - HOVER_H - 14));
+  }
+
   return (
     <div
       className="pointer-events-none absolute z-30 panel px-3 py-2 text-xs leading-relaxed"

@@ -70,16 +70,63 @@ def health() -> Health:
 
 # Per-source coverage columns. Rows-populated is "how many hex cells have a
 # non-null value on this column" — a rough proxy for "did the ingest run".
+# source_url is the canonical DataWA/SILO landing page for each dataset, so
+# the Data tab can render an outbound link next to each row.
 _SOURCE_COLUMNS = [
-    ("groundwater", "Groundwater proclamation (DWER-034)", "gw_proclaimed"),
-    ("surface_water", "Surface water proclamation (DWER-037)", "sw_proclaimed"),
-    ("salinity", "Groundwater salinity (DWER-026)", "salinity_idx"),
-    ("soils", "Soil capability (DPIRD-027)", "capability_class"),
-    ("bushfire", "Bushfire prone areas (OBRM-024)", "bushfire_prone_frac"),
-    ("roads", "Sealed roads (LGATE-195)", "dist_sealed_road_km"),
-    ("townsites", "Townsites (LGATE-248)", "dist_townsite_km"),
-    ("dbca", "DBCA managed land", "dbca_estate_frac"),
-    ("rainfall", "SILO growing-season rainfall", "gsr_mean_mm"),
+    (
+        "groundwater",
+        "Groundwater proclamation (DWER-034)",
+        "gw_proclaimed",
+        "https://catalogue.data.wa.gov.au/dataset/riwi-act-groundwater-areas-dwer-034",
+    ),
+    (
+        "surface_water",
+        "Surface water proclamation (DWER-037)",
+        "sw_proclaimed",
+        "https://catalogue.data.wa.gov.au/dataset/riwi-act-surface-water-areas-dwer-037",
+    ),
+    (
+        "salinity",
+        "Groundwater salinity (DWER-026)",
+        "salinity_idx",
+        "https://catalogue.data.wa.gov.au/dataset/hydrogeochemistry-groundwater-salinity-statewide-dwer-026",
+    ),
+    (
+        "soils",
+        "Soil capability (DPIRD-027)",
+        "capability_class",
+        "https://catalogue.data.wa.gov.au/dataset/rangeland-land-systems-mapping-dpird-027",
+    ),
+    (
+        "bushfire",
+        "Bushfire prone areas (OBRM-024)",
+        "bushfire_prone_frac",
+        "https://catalogue.data.wa.gov.au/dataset/bushfire-prone-areas-obrm-024",
+    ),
+    (
+        "roads",
+        "Sealed roads (LGATE-195)",
+        "dist_sealed_road_km",
+        "https://catalogue.data.wa.gov.au/dataset/roads-lgate-195",
+    ),
+    (
+        "townsites",
+        "Townsites (LGATE-248)",
+        "dist_townsite_km",
+        "https://catalogue.data.wa.gov.au/dataset/townsites-lgate-248",
+    ),
+    (
+        "dbca",
+        "DBCA managed land",
+        "dbca_estate_frac",
+        "https://catalogue.data.wa.gov.au/dataset/dbca-legislated-lands-and-waters-dbca-011",
+    ),
+    (
+        "rainfall",
+        "SILO growing-season rainfall",
+        "gsr_mean_mm",
+        "https://www.longpaddock.qld.gov.au/silo/gridded-data/",
+    ),
 ]
 
 
@@ -117,12 +164,18 @@ def data_status() -> DataStatus:
 
     log_iso = _last_ingest_iso()
     sources: list[DataSource] = []
-    for key, label, col in _SOURCE_COLUMNS:
+    for key, label, col, source_url in _SOURCE_COLUMNS:
         n = con.execute(
             f"SELECT COUNT(*) FROM hex WHERE {col} IS NOT NULL"
         ).fetchone()[0]
         sources.append(
-            DataSource(key=key, label=label, rows_populated=int(n), last_ingest=log_iso)
+            DataSource(
+                key=key,
+                label=label,
+                rows_populated=int(n),
+                last_ingest=log_iso,
+                source_url=source_url,
+            )
         )
     con.close()
 

@@ -13,7 +13,7 @@ import { FACTOR_ORDER } from "../types";
 import type { HexDetail } from "../types";
 import { liveScore } from "../lib/score";
 import { InfoTip } from "./InfoTip";
-import { INSPECTOR_TIP } from "../lib/copy";
+import { INSPECTOR_TIP, INSPECTOR_TIP_SOURCE } from "../lib/copy";
 import { cn } from "../lib/cn";
 import {
   areaHelpTip,
@@ -189,12 +189,14 @@ export function Inspector() {
         <Row
           label="Groundwater"
           tip={INSPECTOR_TIP.groundwater}
+          source={INSPECTOR_TIP_SOURCE.groundwater}
           a={gwText(cellA)}
           b={compareMode && cellB ? gwText(cellB) : undefined}
         />
         <Row
           label="Surface water"
           tip={INSPECTOR_TIP.surfaceWater}
+          source={INSPECTOR_TIP_SOURCE.surfaceWater}
           a={cellA.sw_proclaimed ? "Proclaimed" : "Unproclaimed"}
           b={
             compareMode && cellB
@@ -207,6 +209,7 @@ export function Inspector() {
         <Row
           label="Salinity"
           tip={INSPECTOR_TIP.salinity}
+          source={INSPECTOR_TIP_SOURCE.salinity}
           a={salText(cellA)}
           b={compareMode && cellB ? salText(cellB) : undefined}
         />
@@ -218,12 +221,14 @@ export function Inspector() {
         <Row
           label="Grazing capability"
           tip={INSPECTOR_TIP.capabilityConfidence}
+          source={INSPECTOR_TIP_SOURCE.capabilityConfidence}
           a={capText(cellA)}
           b={compareMode && cellB ? capText(cellB) : undefined}
         />
         <Row
           label="Bushfire prone"
           tip={INSPECTOR_TIP.bushfire}
+          source={INSPECTOR_TIP_SOURCE.bushfire}
           a={fracText(cellA.bushfire_prone_frac, "of cell")}
           b={
             compareMode && cellB
@@ -234,6 +239,7 @@ export function Inspector() {
         <Row
           label="DBCA estate"
           tip={INSPECTOR_TIP.dbca}
+          source={INSPECTOR_TIP_SOURCE.dbca}
           a={dbcaText(cellA)}
           b={compareMode && cellB ? dbcaText(cellB) : undefined}
         />
@@ -245,6 +251,7 @@ export function Inspector() {
         <Row
           label="Nearest town"
           tip={INSPECTOR_TIP.townDist}
+          source={INSPECTOR_TIP_SOURCE.townDist}
           a={distText(cellA.nearest_townsite_name, cellA.dist_townsite_km, units)}
           b={
             compareMode && cellB
@@ -259,6 +266,7 @@ export function Inspector() {
         <Row
           label="Nearest sealed road"
           tip={INSPECTOR_TIP.roadDist}
+          source={INSPECTOR_TIP_SOURCE.roadDist}
           a={distText(
             cellA.nearest_sealed_road_name,
             cellA.dist_sealed_road_km,
@@ -282,6 +290,7 @@ export function Inspector() {
         <Row
           label="Rain (May-Oct 91–20)"
           tip={INSPECTOR_TIP.rainMean}
+          source={INSPECTOR_TIP_SOURCE.rainMean}
           a={cellA.gsr_mean_mm != null ? `${cellA.gsr_mean_mm.toFixed(0)} mm` : "—"}
           b={
             compareMode && cellB
@@ -294,6 +303,7 @@ export function Inspector() {
         <Row
           label="Rain trend (since 1970)"
           tip={INSPECTOR_TIP.rainTrend}
+          source={INSPECTOR_TIP_SOURCE.rainTrend}
           a={trendText(cellA.gsr_trend)}
           b={compareMode && cellB ? trendText(cellB.gsr_trend) : undefined}
         />
@@ -305,7 +315,9 @@ export function Inspector() {
         <section className="space-y-1">
           <div className="flex items-center gap-1.5 mb-1">
             <div className="field-label !mb-0">Parcels in cell</div>
-            <InfoTip>{INSPECTOR_TIP.parcels}</InfoTip>
+            <InfoTip source={INSPECTOR_TIP_SOURCE.parcels}>
+              {INSPECTOR_TIP.parcels}
+            </InfoTip>
           </div>
           <Row
             label="Count"
@@ -435,11 +447,13 @@ function deltaTone(
 function Row({
   label,
   tip,
+  source,
   a,
   b,
 }: {
   label: React.ReactNode;
   tip?: string;
+  source?: import("../lib/copy").SourceKey;
   a: React.ReactNode;
   b?: React.ReactNode;
 }) {
@@ -448,7 +462,7 @@ function Row({
       <div className="flex justify-between gap-4 text-xs">
         <span className="text-panel-muted flex items-center gap-1.5 min-w-0">
           <span className="truncate">{label}</span>
-          {tip && <InfoTip>{tip}</InfoTip>}
+          {tip && <InfoTip source={source}>{tip}</InfoTip>}
         </span>
         <span className="text-right shrink-0">{a}</span>
       </div>
@@ -458,7 +472,7 @@ function Row({
     <div className="grid grid-cols-[1fr_auto_auto] gap-2 items-center text-xs">
       <span className="text-panel-muted flex items-center gap-1.5 min-w-0">
         <span className="truncate">{label}</span>
-        {tip && <InfoTip>{tip}</InfoTip>}
+        {tip && <InfoTip source={source}>{tip}</InfoTip>}
       </span>
       <span className="text-right text-white">{a}</span>
       <span className="text-right text-amber-300">{b}</span>

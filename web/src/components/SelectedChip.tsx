@@ -4,14 +4,17 @@
  * Buttons: fly-to (crosshair), open inspector (arrow), compare (A/B icon),
  * clear (✕).
  *
- * On mobile the chip stays in the top-left; the bottom sheet doesn't
- * conflict there. Nothing about the desktop rendering changes.
+ * On mobile it collapses to a single-row chip pinned inline to the right
+ * of the brand Toolbar so it doesn't consume a second row of vertical
+ * space. Only shows LGA + suit + open-inspector + clear on mobile;
+ * fly-to and compare live in the Inspector tab on that form factor.
  */
 
 import { useHexDetail } from "../hooks";
 import { useUi } from "../store";
 import { liveScore } from "../lib/score";
 import { cn } from "../lib/cn";
+import { useMedia } from "../lib/useMedia";
 
 export function SelectedChip() {
   const selectedH3 = useUi((s) => s.selectedH3);
@@ -23,10 +26,69 @@ export function SelectedChip() {
   const selectHex = useUi((s) => s.selectHex);
   const flyToHex = useUi((s) => s.flyToHex);
   const { data: cell } = useHexDetail(selectedH3);
+  const isMobile = useMedia("(max-width: 640px)");
 
   if (!selectedH3) return null;
 
   const suit = cell && weights ? liveScore(cell, weights) : cell?.suitability_score;
+
+  // Mobile branch: render a compact chip inline to the right of the brand
+  // Toolbar chip (which sits at top-4 left-4 with roughly ~86px width when
+  // "Lima" title is hidden by xs breakpoint but shown at ≥480px). Instead
+  // of a fixed left offset that jitters, dock this chip to the right of
+  // the toolbar via top-4 + left dynamic layout below the Toolbar's row.
+  if (isMobile) {
+    return (
+      <div
+        className={cn(
+          "panel absolute top-4 left-[124px] right-4 z-20 pl-2.5 pr-1 py-1.5 flex items-center gap-2",
+          compareArmed && "ring-2 ring-amber-300/60",
+        )}
+      >
+        <div className="min-w-0 flex-1">
+          <div className="text-[10px] uppercase tracking-wider text-panel-muted leading-tight truncate">
+            {compareArmed ? "Tap hex for B" : cell?.lga ?? "Selected"}
+          </div>
+          <div className="text-[10px] text-panel-muted font-mono truncate leading-tight">
+            {selectedH3}
+          </div>
+        </div>
+        <div className="shrink-0 text-right">
+          <div className="text-[10px] uppercase tracking-wider text-panel-muted leading-tight">
+            Suit
+          </div>
+          <div
+            className={cn(
+              "text-sm font-semibold font-mono leading-none tabular-nums",
+              cell?.excluded && "text-amber-300",
+            )}
+          >
+            {cell?.excluded ? "—" : suit != null ? suit.toFixed(2) : "…"}
+          </div>
+        </div>
+        <div className="flex items-center gap-0.5 shrink-0">
+          <ChipButton
+            onClick={() => setActiveTab("inspector")}
+            label="Open inspector"
+            title="Open inspector"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <line x1="5" y1="12" x2="19" y2="12" />
+              <polyline points="12 5 19 12 12 19" />
+            </svg>
+          </ChipButton>
+          <ChipButton
+            onClick={() => selectHex(null)}
+            label="Clear selection"
+            title="Clear"
+            danger
+          >
+            ✕
+          </ChipButton>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
