@@ -60,3 +60,4 @@ coverage/
 # Editor local settings that occasionally sneak into web/
 web/.idea/
 web/.vscode/
+.claude/
