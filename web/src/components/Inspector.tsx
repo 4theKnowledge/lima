@@ -243,6 +243,13 @@ export function Inspector() {
           a={dbcaText(cellA)}
           b={compareMode && cellB ? dbcaText(cellB) : undefined}
         />
+        <Row
+          label="Population density"
+          tip={INSPECTOR_TIP.popDensity}
+          source={INSPECTOR_TIP_SOURCE.popDensity}
+          a={popDensityText(cellA.pop_density_per_km2)}
+          b={compareMode && cellB ? popDensityText(cellB.pop_density_per_km2) : undefined}
+        />
       </section>
 
       {/* Access */}
@@ -500,6 +507,12 @@ function tempText(v: number | null | undefined): string {
 function tempTrendText(v: number | null | undefined): string {
   if (v == null) return "—";
   return `${v >= 0 ? "+" : ""}${v.toFixed(2)} °C/decade`;
+}
+function popDensityText(v: number | null | undefined): string {
+  if (v == null) return "—";
+  // Sub-1 needs 2 dp to distinguish rural cells; ≥10 rounds to whole.
+  const digits = v >= 10 ? 0 : v >= 1 ? 1 : 2;
+  return `${v.toFixed(digits)} /km²`;
 }
 
 function deltaFmt(

@@ -58,6 +58,10 @@ export const SOURCES = {
     label: "SILO · Growing-season rainfall",
     url: "https://www.longpaddock.qld.gov.au/silo/gridded-data/",
   },
+  "ABS-2021": {
+    label: "ABS · 2021 Census DataPacks (SA1)",
+    url: "https://www.abs.gov.au/census/find-census-data/datapacks",
+  },
 } as const;
 
 export type SourceKey = keyof typeof SOURCES;
@@ -119,6 +123,11 @@ export const EXCLUSION_TIP = {
     "Exclude cells with mean winter min (Jun–Aug daily min, 1991–2020) at or " +
     "below X °C. Targets frost-sensitive enterprises (citrus, avocado). Set " +
     "to −10 to disable. Try 4 for a frost-averse hobby or citrus block.",
+  pop_density_per_km2_above:
+    "Exclude cells above X people per km² (ABS 2021 SA1 area-weighted). " +
+    "SW rural cells sit ~0.1–5 /km²; townsite cells jump to tens or more. " +
+    "Set to 10 000 to disable. Try 20 for broadacre (dodges peri-urban), " +
+    "5 for genuine off-grid.",
 } as const;
 
 export const METRIC_TIP: Record<Metric, string> = {
@@ -191,6 +200,11 @@ export const METRIC_TIP: Record<Metric, string> = {
     "Change in mean winter min temperature (Jun–Aug daily min) per decade, " +
     "linear regression 1970–latest. Rising = fewer frosts (mildly good for " +
     "hobby/citrus) but also part of the warming signal — interpret via Purpose.",
+  pop_density_per_km2:
+    "Population density in persons per km², from the ABS 2021 Census SA1 " +
+    "mesh area-weighted onto this hex. Rural SW cells typically sit at " +
+    "~0.1–5 /km²; townsite cells jump into the tens or hundreds. " +
+    "High values proxy peri-urban land-use conflict for broadacre buyers.",
 };
 
 export const LEGEND_TIP = {
@@ -248,6 +262,7 @@ export const INSPECTOR_TIP_SOURCE: Partial<Record<string, SourceKey>> = {
   vp: "SILO",
   summerMaxTrend: "SILO",
   winterMinTrend: "SILO",
+  popDensity: "ABS-2021",
 };
 
 export const INSPECTOR_TIP = {
@@ -340,6 +355,11 @@ export const INSPECTOR_TIP = {
     "1970 to latest. Rising values mean fewer frost nights over time — mildly " +
     "good for frost-sensitive crops, but also a warming signal. Interpret " +
     "based on Purpose.",
+  popDensity:
+    "Persons per km² from the ABS 2021 Census SA1 mesh, area-weighted onto " +
+    "this hex. Rural SW cells run ~0.1–5 /km²; townsite cells jump into the " +
+    "tens or hundreds. Useful as a peri-urban screen for broadacre or off-grid " +
+    "Purposes.",
   parcelsTotal:
     "Sum of the areas of all parcels whose centroid falls inside this cell " +
     "(hectares).",

@@ -33,7 +33,8 @@ export function ExclusionsPanel() {
       draft.salinity_idx_at_or_above !== current.salinity_idx_at_or_above ||
       draft.dbca_estate_frac_above !== current.dbca_estate_frac_above ||
       draft.summer_max_temp_c_above !== current.summer_max_temp_c_above ||
-      draft.winter_min_temp_c_below !== current.winter_min_temp_c_below);
+      draft.winter_min_temp_c_below !== current.winter_min_temp_c_below ||
+      draft.pop_density_per_km2_above !== current.pop_density_per_km2_above);
 
   return (
     <section className="space-y-3">
@@ -101,6 +102,16 @@ export function ExclusionsPanel() {
         value={draft.winter_min_temp_c_below ?? -10}
         onChange={(v) => set("winter_min_temp_c_below", v)}
         precision={1}
+      />
+      <Slider
+        label="Pop density > X /km² (10000=disable)"
+        tip={EXCLUSION_TIP.pop_density_per_km2_above}
+        min={0}
+        max={200}
+        step={1}
+        value={Math.min(draft.pop_density_per_km2_above ?? 10000, 200)}
+        onChange={(v) => set("pop_density_per_km2_above", v >= 200 ? 10000 : v)}
+        precision={0}
       />
       {dirty && preview && (
         <div className="rounded-md border border-white/5 bg-white/5 px-2.5 py-2 text-[11px] leading-snug space-y-0.5">

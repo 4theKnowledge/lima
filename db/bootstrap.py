@@ -61,6 +61,9 @@ CREATE TABLE IF NOT EXISTS hex (
     summer_max_trend_c_per_decade   DOUBLE,
     winter_min_trend_c_per_decade   DOUBLE,
 
+    -- population (ABS 2021 Census, SA1 mesh, area-weighted mean per hex)
+    pop_density_per_km2   DOUBLE,            -- persons per km², area-weighted
+
     -- constraints
     bushfire_prone_frac   DOUBLE,            -- 0..1 area fraction
 

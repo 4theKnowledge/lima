@@ -36,6 +36,7 @@ export type HexCell = {
   vp_annual_hpa: number | null;
   summer_max_trend_c_per_decade: number | null;
   winter_min_trend_c_per_decade: number | null;
+  pop_density_per_km2: number | null;
 };
 
 export type HexDetail = HexCell & {
@@ -85,6 +86,7 @@ export type Exclusions = {
   dbca_estate_frac_above: number | null;
   summer_max_temp_c_above: number | null;
   winter_min_temp_c_below: number | null;
+  pop_density_per_km2_above: number | null;
 };
 
 export type Sensitivity = {

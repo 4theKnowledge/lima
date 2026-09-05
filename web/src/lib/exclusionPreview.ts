@@ -9,6 +9,7 @@
  *   - dbca_estate_frac_above       : dbca_estate_frac > X
  *   - summer_max_temp_c_above      : summer_max_temp_c >= X
  *   - winter_min_temp_c_below      : winter_min_temp_c <= X
+ *   - pop_density_per_km2_above    : pop_density_per_km2 > X
  *
  * The server also considers `parcel_count_below` and other rules; those
  * aren't editable in the UI right now, so they carry over from whichever
@@ -67,6 +68,12 @@ function draftExcludes(cell: HexCell, draft: Exclusions): boolean {
     draft.winter_min_temp_c_below != null &&
     cell.winter_min_temp_c != null &&
     cell.winter_min_temp_c <= draft.winter_min_temp_c_below
+  )
+    return true;
+  if (
+    draft.pop_density_per_km2_above != null &&
+    cell.pop_density_per_km2 != null &&
+    cell.pop_density_per_km2 > draft.pop_density_per_km2_above
   )
     return true;
   return false;

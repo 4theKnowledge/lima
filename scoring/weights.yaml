@@ -35,6 +35,13 @@ exclusions:
   # enterprises (avocado, citrus) hate real cold. Default -10 disables (no
   # SW cell hits that). Set to ~4 for a frost-averse hobby/citrus Purpose.
   winter_min_temp_c_below: -10
+  # Population density (persons/km², ABS 2021 Census SA1 area-weighted).
+  # Excludes cells above X people/km² — targets broadacre/off-grid Purposes
+  # that want to avoid urban encroachment or peri-urban land-use conflict.
+  # SW rural cells sit ~0.1-5 /km²; townsites push into the tens or hundreds.
+  # Default 10000 disables (metro Perth hits ~4000). Try 20 for broadacre,
+  # 5 for genuine off-grid.
+  pop_density_per_km2_above: 10000
 
 # Stage 2 — weighted sum on survivors. Weights must sum to 1.0.
 weights:

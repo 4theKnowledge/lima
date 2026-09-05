@@ -32,30 +32,123 @@ export type Metric =
   | "solar_annual_mj"
   | "vp_annual_hpa"
   | "summer_max_trend_c_per_decade"
-  | "winter_min_trend_c_per_decade";
+  | "winter_min_trend_c_per_decade"
+  | "pop_density_per_km2";
 
-export const METRIC_OPTIONS: { value: Metric; label: string }[] = [
-  { value: "suitability_score", label: "★ Suitability score" },
-  { value: "parcel_count", label: "Parcel count" },
-  { value: "parcel_area_median_ha", label: "Median parcel area (ha)" },
-  { value: "gw_proclaimed", label: "Groundwater: proclaimed?" },
-  { value: "sw_proclaimed", label: "Surface water: proclaimed?" },
-  { value: "salinity_idx", label: "Salinity: TDS class" },
-  { value: "bushfire_prone_frac", label: "Bushfire prone: area fraction" },
-  { value: "capability_class", label: "Soil capability (grazing)" },
-  { value: "dist_townsite_km", label: "Distance to nearest town (km)" },
-  { value: "dist_sealed_road_km", label: "Distance to sealed road (km)" },
-  { value: "dbca_estate_frac", label: "DBCA estate: area fraction" },
-  { value: "gsr_mean_mm", label: "Rainfall: May-Oct mean (mm)" },
-  { value: "gsr_trend", label: "Rainfall trend since 1970 (mm/decade)" },
-  { value: "summer_max_temp_c", label: "Summer max temp (°C, Dec-Feb)" },
-  { value: "winter_min_temp_c", label: "Winter min temp (°C, Jun-Aug)" },
-  { value: "evap_annual_mm", label: "Annual evaporation (mm)" },
-  { value: "solar_annual_mj", label: "Solar radiation (MJ/m²/day)" },
-  { value: "vp_annual_hpa", label: "Vapour pressure (hPa)" },
-  { value: "summer_max_trend_c_per_decade", label: "Summer max trend since 1970 (°C/decade)" },
-  { value: "winter_min_trend_c_per_decade", label: "Winter min trend since 1970 (°C/decade)" },
+export type MetricOption = {
+  value: Metric | string;
+  label: string;
+  disabled?: boolean;
+};
+
+export type MetricGroup = {
+  label: string;
+  options: MetricOption[];
+};
+
+// Grouped for the picker UI. Disabled entries are stubs for datasets not
+// yet ingested — they render greyed-out to signal what's on the roadmap
+// without breaking the type of `metric` (only enabled values are Metric).
+export const METRIC_GROUPS: MetricGroup[] = [
+  {
+    label: "Overall",
+    options: [{ value: "suitability_score", label: "★ Suitability score" }],
+  },
+  {
+    label: "Parcels",
+    options: [
+      { value: "parcel_count", label: "Parcel count" },
+      { value: "parcel_area_median_ha", label: "Median parcel area (ha)" },
+    ],
+  },
+  {
+    label: "Water",
+    options: [
+      { value: "gw_proclaimed", label: "Groundwater: proclaimed?" },
+      { value: "sw_proclaimed", label: "Surface water: proclaimed?" },
+      { value: "salinity_idx", label: "Salinity: TDS class" },
+      { value: "aquifers", label: "Aquifers (soon)", disabled: true },
+    ],
+  },
+  {
+    label: "Land & soil",
+    options: [
+      { value: "capability_class", label: "Soil capability (grazing)" },
+      { value: "elevation_m", label: "Elevation (soon)", disabled: true },
+      {
+        value: "elevation_grade_broadacre",
+        label: "Elevation grade — broadacre (soon)",
+        disabled: true,
+      },
+      {
+        value: "sea_level_rise_exposure",
+        label: "Sea-level rise exposure (soon)",
+        disabled: true,
+      },
+    ],
+  },
+  {
+    label: "Climate — baseline",
+    options: [
+      { value: "gsr_mean_mm", label: "Rainfall: May-Oct mean (mm)" },
+      { value: "summer_max_temp_c", label: "Summer max temp (°C, Dec-Feb)" },
+      { value: "winter_min_temp_c", label: "Winter min temp (°C, Jun-Aug)" },
+      { value: "evap_annual_mm", label: "Annual evaporation (mm)" },
+      { value: "solar_annual_mj", label: "Solar radiation (MJ/m²/day)" },
+      { value: "vp_annual_hpa", label: "Vapour pressure (hPa)" },
+    ],
+  },
+  {
+    label: "Climate — trends",
+    options: [
+      { value: "gsr_trend", label: "Rainfall trend since 1970 (mm/decade)" },
+      {
+        value: "summer_max_trend_c_per_decade",
+        label: "Summer max trend since 1970 (°C/decade)",
+      },
+      {
+        value: "winter_min_trend_c_per_decade",
+        label: "Winter min trend since 1970 (°C/decade)",
+      },
+    ],
+  },
+  {
+    label: "Hazards",
+    options: [
+      { value: "bushfire_prone_frac", label: "Bushfire prone: area fraction" },
+      { value: "dbca_estate_frac", label: "DBCA estate: area fraction" },
+    ],
+  },
+  {
+    label: "Access & services",
+    options: [
+      { value: "dist_townsite_km", label: "Distance to nearest town (km)" },
+      { value: "dist_sealed_road_km", label: "Distance to sealed road (km)" },
+      { value: "dist_poi_km", label: "Distance to places of interest (soon)", disabled: true },
+      { value: "dist_school_km", label: "Distance to schools (soon)", disabled: true },
+      { value: "dist_hospital_km", label: "Distance to hospitals (soon)", disabled: true },
+      { value: "dist_airport_km", label: "Distance to airports (soon)", disabled: true },
+      { value: "dist_port_km", label: "Distance to ports (soon)", disabled: true },
+      { value: "walkability", label: "Walkability (soon)", disabled: true },
+    ],
+  },
+  {
+    label: "Demographics",
+    options: [
+      { value: "pop_density_per_km2", label: "Population density (people/km²)" },
+    ],
+  },
 ];
+
+// Flat list of enabled options — used by RankedTable for label lookup and
+// any other consumer that just needs value→label. Derived from METRIC_GROUPS
+// so there's a single source of truth.
+export const METRIC_OPTIONS: { value: Metric; label: string }[] =
+  METRIC_GROUPS.flatMap((g) =>
+    g.options
+      .filter((o) => !o.disabled)
+      .map((o) => ({ value: o.value as Metric, label: o.label })),
+  );
 
 // Metrics where high value = worse; ramp inverted so purple always reads
 // as "worse". For the SILO climate metrics:
@@ -78,6 +171,10 @@ export const HIGH_IS_BAD: Set<Metric> = new Set<Metric>([
   "summer_max_temp_c",
   "evap_annual_mm",
   "summer_max_trend_c_per_decade",
+  // Population density: broadacre/off-grid want low; hobby wants mid.
+  // Default the ramp to "high is worse" so purple flags peri-urban cells
+  // for the common rural-buyer case. Hobby Purpose reinterprets via copy.
+  "pop_density_per_km2",
 ]);
 
 export const CATEGORICAL_METRICS: Set<Metric> = new Set<Metric>([

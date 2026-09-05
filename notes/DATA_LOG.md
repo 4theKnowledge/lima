@@ -89,3 +89,7 @@ For manual downloads (SLIP portal), record: date | source | dataset code | scope
 2026-09-05 | SILO | max_temp | AOI | daily 1991-2020 | 10646/11002 cells populated in summer_max_temp_c
 2026-09-05 | SILO | min_temp | AOI | daily 1991-2020 | 10646/11002 cells populated in winter_min_temp_c
 2026-09-05 | SILO | evap_pan | AOI | daily 1991-2020 | 11002/11002 cells populated in evap_annual_mm
+2026-09-05 | SILO | radiation | AOI | daily 1991-2020 | 10646/11002 cells populated in solar_annual_mj
+2026-09-05 | SILO | vp | AOI | daily 1991-2020 | 10646/11002 cells populated in vp_annual_hpa
+2026-09-05 | SILO | max_temp | AOI | baseline 1991-2020, trend 1970-2020 | 10646/11002 in summer_max_temp_c, trend in summer_max_trend_c_per_decade
+2026-09-05 | SILO | min_temp | AOI | baseline 1991-2020, trend 1970-2020 | 10646/11002 in winter_min_temp_c, trend in winter_min_trend_c_per_decade

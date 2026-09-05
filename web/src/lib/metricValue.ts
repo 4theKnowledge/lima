@@ -125,4 +125,10 @@ export const METRIC_VALUE: Record<Metric, MetricValueSpec> = {
         ? dash
         : `${c.winter_min_trend_c_per_decade >= 0 ? "+" : ""}${c.winter_min_trend_c_per_decade.toFixed(2)} °C/dec`,
   },
+  pop_density_per_km2: {
+    label: "Pop density",
+    // <10 /km² is normal rural; show one decimal so the low end reads
+    // meaningfully. Townsite cells run into the tens/hundreds — same format.
+    format: (c) => num(c.pop_density_per_km2, 1, " /km²"),
+  },
 };

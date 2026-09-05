@@ -49,6 +49,7 @@ const METRIC_COL_SPEC: Partial<Record<Metric, { label: string; fmt?: number; w?:
   vp_annual_hpa:         { label: "VP", fmt: 1, w: "w-14" },
   summer_max_trend_c_per_decade: { label: "Smr trend", fmt: 2, w: "w-20" },
   winter_min_trend_c_per_decade: { label: "Wtr trend", fmt: 2, w: "w-20" },
+  pop_density_per_km2:   { label: "Pop /km²", fmt: 1, w: "w-20" },
 };
 
 export function RankedTable() {

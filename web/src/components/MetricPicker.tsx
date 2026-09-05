@@ -1,4 +1,4 @@
-import { CATEGORICAL_METRICS, HIGH_IS_BAD, METRIC_OPTIONS, useUi } from "../store";
+import { CATEGORICAL_METRICS, HIGH_IS_BAD, METRIC_GROUPS, useUi } from "../store";
 import { InfoTip } from "./InfoTip";
 import { LEGEND_TIP, METRIC_TIP } from "../lib/copy";
 import { CATEGORICAL_COLOUR, gradientCss } from "../lib/color";
@@ -24,10 +24,19 @@ export function MetricPicker() {
         onChange={(e) => setMetric(e.target.value as typeof metric)}
         className="w-full bg-white/5 border border-white/10 rounded-md px-2.5 py-1.5 text-xs focus:outline-none focus:border-emerald-400/40"
       >
-        {METRIC_OPTIONS.map((o) => (
-          <option key={o.value} value={o.value} className="bg-neutral-900">
-            {o.label}
-          </option>
+        {METRIC_GROUPS.map((g) => (
+          <optgroup key={g.label} label={g.label} className="bg-neutral-900">
+            {g.options.map((o) => (
+              <option
+                key={o.value}
+                value={o.value}
+                disabled={o.disabled}
+                className="bg-neutral-900"
+              >
+                {o.label}
+              </option>
+            ))}
+          </optgroup>
         ))}
       </select>
       <div className="mt-3 space-y-1 text-[11px]">

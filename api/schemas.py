@@ -46,6 +46,7 @@ class HexCell(BaseModel):
     # ingest that populates them). Once the columns exist the SELECT fills them.
     summer_max_trend_c_per_decade: float | None = None
     winter_min_trend_c_per_decade: float | None = None
+    pop_density_per_km2: float | None = None
 
 
 class HexDetail(HexCell):
@@ -91,6 +92,10 @@ class Exclusions(BaseModel):
     #   winter_min: ~-2 to 12°C. Excludes at/below (frost sensitivity).
     summer_max_temp_c_above: float | None = None
     winter_min_temp_c_below: float | None = None
+    # Population density (persons/km², ABS 2021 SA1). Range hints:
+    #   rural SW ~ 0.1-5 /km²; townsites ~ tens+; metro Perth ~ hundreds+.
+    #   Excludes above (peri-urban / urban).
+    pop_density_per_km2_above: float | None = None
 
 
 class Sensitivity(BaseModel):

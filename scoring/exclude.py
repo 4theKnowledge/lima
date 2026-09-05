@@ -80,6 +80,10 @@ def apply() -> None:
         thresh = rules["winter_min_temp_c_below"]
         active.append(("winter_min_temp_c", f"winter<={thresh}C", f"winter_min_temp_c <= {thresh}"))
 
+    if rules.get("pop_density_per_km2_above") is not None and not _column_all_null(con, "pop_density_per_km2"):
+        thresh = rules["pop_density_per_km2_above"]
+        active.append(("pop_density_per_km2", f"pop>{thresh}/km2", f"pop_density_per_km2 > {thresh}"))
+
     print(f"[exclude] Active rules ({len(active)}):")
     for _, label, pred in active:
         print(f"    - {label}  [{pred}]")

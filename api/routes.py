@@ -62,11 +62,9 @@ HEX_COLUMNS = """
     dbca_estate_frac,
     gsr_mean_mm, gsr_trend,
     summer_max_temp_c, winter_min_temp_c,
-    evap_annual_mm, solar_annual_mj, vp_annual_hpa
-    -- Trend columns re-added once the ALTER runs after the current
-    -- temperature ingest finishes and its `--var max_temp --var min_temp`
-    -- follow-up populates them:
-    --   summer_max_trend_c_per_decade, winter_min_trend_c_per_decade
+    evap_annual_mm, solar_annual_mj, vp_annual_hpa,
+    summer_max_trend_c_per_decade, winter_min_trend_c_per_decade,
+    pop_density_per_km2
 """
 
 
@@ -175,6 +173,12 @@ _SOURCE_COLUMNS = [
         "SILO vapour pressure",
         "vp_annual_hpa",
         "https://www.longpaddock.qld.gov.au/silo/gridded-data/",
+    ),
+    (
+        "population",
+        "Population density (ABS 2021 SA1)",
+        "pop_density_per_km2",
+        "https://www.abs.gov.au/census/find-census-data/datapacks",
     ),
 ]
 
@@ -351,6 +355,7 @@ def get_exclusions() -> Exclusions:
         dbca_estate_frac_above=ex.get("dbca_estate_frac_above"),
         summer_max_temp_c_above=ex.get("summer_max_temp_c_above"),
         winter_min_temp_c_below=ex.get("winter_min_temp_c_below"),
+        pop_density_per_km2_above=ex.get("pop_density_per_km2_above"),
     )
 
 
