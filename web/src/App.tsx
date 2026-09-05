@@ -12,6 +12,7 @@ import { HudPanel, TabBody } from "./components/Panel";
 import { Toolbar } from "./components/Toolbar";
 import { SelectedChip } from "./components/SelectedChip";
 import { MapControls } from "./components/MapControls";
+import { Legend } from "./components/Legend";
 import { SearchBox } from "./components/SearchBox";
 import { PurposePicker } from "./components/PurposePicker";
 import { WeightsPanel } from "./components/WeightsPanel";
@@ -34,6 +35,7 @@ export default function App() {
       <Toolbar />
       <SelectedChip />
       <MapControls />
+      <Legend />
       <UpdateBanner />
 
       <HudPanel>

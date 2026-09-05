@@ -7,7 +7,7 @@
  */
 
 import type { HexCell, Weights } from "../types";
-import { normalisedWeights } from "../store";
+import { normalisedWeights, type Metric } from "../store";
 
 export function liveScore(cell: HexCell, w: Weights): number | null {
   if (cell.excluded) return null;
@@ -41,4 +41,27 @@ export function applyLiveScoring(
 ): HexCell[] {
   if (!w) return cells;
   return cells.map((c) => ({ ...c, suitability_score: liveScore(c, w) }));
+}
+
+/**
+ * Min/max of a numeric metric across the given cells. Returns [0, 1] when
+ * there's no data to fall back to a safe default that keeps the colour
+ * ramp valid. Used by both the map layer (to drive the fill gradient)
+ * and the legend HUD (to label the ramp endpoints).
+ */
+export function metricRange(
+  cells: HexCell[],
+  metric: Metric,
+): [number, number] {
+  if (!cells.length) return [0, 1];
+  let mn = Infinity;
+  let mx = -Infinity;
+  for (const c of cells) {
+    const v = c[metric] as number | null | undefined;
+    if (v != null && Number.isFinite(v)) {
+      if (v < mn) mn = v;
+      if (v > mx) mx = v;
+    }
+  }
+  return mn === Infinity ? [0, 1] : [mn, mx];
 }

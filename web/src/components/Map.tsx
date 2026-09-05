@@ -29,7 +29,7 @@ import {
   useUi,
   type Metric,
 } from "../store";
-import { applyLiveScoring } from "../lib/score";
+import { applyLiveScoring, metricRange } from "../lib/score";
 import { categorical, dim, gradient } from "../lib/color";
 import { formatArea, useSettings } from "../settings";
 import { useMedia } from "../lib/useMedia";
@@ -114,22 +114,11 @@ export function MapView() {
 
   // Continuous metrics need a data-driven vmin/vmax so the ramp uses the
   // full colour space. Recomputed only when data or metric changes.
-  const [vmin, vmax] = useMemo(() => {
-    if (!cells.length || CATEGORICAL_METRICS.has(metric)) return [0, 1];
-    const vs: number[] = [];
-    for (const c of cells) {
-      const v = c[metric] as number | null | undefined;
-      if (v != null && Number.isFinite(v)) vs.push(v as number);
-    }
-    if (!vs.length) return [0, 1];
-    let mn = Infinity;
-    let mx = -Infinity;
-    for (const v of vs) {
-      if (v < mn) mn = v;
-      if (v > mx) mx = v;
-    }
-    return [mn, mx];
-  }, [cells, metric]);
+  const [vmin, vmax] = useMemo(
+    () =>
+      CATEGORICAL_METRICS.has(metric) ? [0, 1] : metricRange(cells, metric),
+    [cells, metric],
+  );
 
   const invert = HIGH_IS_BAD.has(metric);
   const isCategorical = CATEGORICAL_METRICS.has(metric);

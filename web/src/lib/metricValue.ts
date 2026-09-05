@@ -132,3 +132,13 @@ export const METRIC_VALUE: Record<Metric, MetricValueSpec> = {
     format: (c) => num(c.pop_density_per_km2, 1, " /km²"),
   },
 };
+
+/**
+ * Format a raw numeric value for a given metric — same precision + unit
+ * as METRIC_VALUE[metric].format, but without needing a full cell. Used
+ * by the legend HUD to label the ramp endpoints (vmin / vmax).
+ */
+export function formatMetricValue(metric: Metric, v: number): string {
+  const stub = { [metric]: v } as unknown as HexCell;
+  return METRIC_VALUE[metric].format(stub);
+}

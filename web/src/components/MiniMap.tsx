@@ -19,7 +19,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 
 import { useHex } from "../hooks";
 import { CATEGORICAL_METRICS, HIGH_IS_BAD, useUi } from "../store";
-import { applyLiveScoring } from "../lib/score";
+import { applyLiveScoring, metricRange } from "../lib/score";
 import { categorical, dim, gradient } from "../lib/color";
 import { useSettings } from "../settings";
 import { useMedia } from "../lib/useMedia";
@@ -75,19 +75,10 @@ export function MiniMap({ h3, compareH3 }: { h3: string; compareH3?: string | nu
   const invert = HIGH_IS_BAD.has(metric);
   const isCategorical = CATEGORICAL_METRICS.has(metric);
 
-  const [vmin, vmax] = useMemo(() => {
-    if (!cells.length || isCategorical) return [0, 1];
-    let mn = Infinity;
-    let mx = -Infinity;
-    for (const c of cells) {
-      const v = c[metric] as number | null | undefined;
-      if (v != null && Number.isFinite(v)) {
-        if (v < mn) mn = v;
-        if (v > mx) mx = v;
-      }
-    }
-    return mn === Infinity ? [0, 1] : [mn, mx];
-  }, [cells, metric, isCategorical]);
+  const [vmin, vmax] = useMemo(
+    () => (isCategorical ? [0, 1] : metricRange(cells, metric)),
+    [cells, metric, isCategorical],
+  );
 
   const layers = useMemo(() => {
     const hex = new H3HexagonLayer<HexCell>({
