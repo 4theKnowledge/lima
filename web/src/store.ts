@@ -191,6 +191,10 @@ type UiState = {
   selectedH3: string | null;
   compareH3: string | null; // pinned "B" cell for side-by-side compare
   searchH3: string | null;
+  // Human-readable label of the current search result (kept in the store
+  // so the SearchBox can restore it after tab-switch unmounts wipe local
+  // component state).
+  searchLabel: string | null;
   // Bumps every time flyTo() is called. Map watches (h3, nonce) so calling
   // flyTo on the currently-flown hex still fires — otherwise re-clicking
   // "go to" for the same cell would be a no-op.
@@ -221,6 +225,7 @@ type UiState = {
   armCompare: () => void; // touch-friendly alternative to shift-click
   compareArmed: boolean;
   setSearchH3: (h3: string | null) => void;
+  setSearchResult: (h3: string | null, label: string | null) => void;
   flyToHex: (h3: string) => void;
   nudgeZoom: (delta: number) => void;
   setLgas: (lgas: string[]) => void;
@@ -237,6 +242,7 @@ export const useUi = create<UiState>((set) => ({
   compareH3: null,
   compareArmed: false,
   searchH3: null,
+  searchLabel: null,
   flyTo: null,
   zoomNudge: null,
   selectedLgas: [],
@@ -267,7 +273,16 @@ export const useUi = create<UiState>((set) => ({
             activeTab: "inspector",
             compareArmed: s.compareArmed,
           }
-        : { selectedH3: null, compareH3: null, compareArmed: false },
+        : {
+            // Full clear: drop selection, compare, AND search overlay.
+            // Otherwise the searched cell keeps its dashed outline +
+            // spotlight after "Clear", which looks like a stuck selection.
+            selectedH3: null,
+            compareH3: null,
+            compareArmed: false,
+            searchH3: null,
+            searchLabel: null,
+          },
     ),
   setCompareH3: (h3) => set({ compareH3: h3 }),
   toggleCompare: (h3) =>
@@ -285,6 +300,7 @@ export const useUi = create<UiState>((set) => ({
     }),
   armCompare: () => set((s) => ({ compareArmed: !s.compareArmed })),
   setSearchH3: (h3) => set({ searchH3: h3 }),
+  setSearchResult: (h3, label) => set({ searchH3: h3, searchLabel: label }),
   flyToHex: (h3) =>
     set((s) => ({ flyTo: { h3, nonce: (s.flyTo?.nonce ?? 0) + 1 } })),
   nudgeZoom: (delta) =>
